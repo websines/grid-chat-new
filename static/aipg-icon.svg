@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+  <!-- Grid pattern representing AI Power Grid -->
+  <path d="M3 3h6v6H3z"/>
+  <path d="M15 3h6v6h-6z"/>
+  <path d="M3 15h6v6H3z"/>
+  <path d="M15 15h6v6h-6z"/>
+  <!-- Central node representing AI -->
+  <circle cx="12" cy="12" r="2" fill="currentColor"/>
+  <!-- Connection lines -->
+  <path d="M9 9l3 3"/>
+  <path d="M15 9l-3 3"/>
+  <path d="M9 15l3-3"/>
+  <path d="M15 15l-3-3"/>
+</svg> 

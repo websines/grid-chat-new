@@ -1,5 +1,3 @@
-x.py
-yarn.lock
 .DS_Store
 node_modules
 /build
@@ -14,14 +12,17 @@ vite.config.ts.timestamp-*
 __pycache__/
 *.py[cod]
 *$py.class
-.nvmrc
-CLAUDE.md
+
 # C extensions
 *.so
 
 # Pyodide distribution
 static/pyodide/*
 !static/pyodide/pyodide-lock.json
+
+# Cache and model files
+data/cache/
+data/vector_db/
 
 # Distribution / packaging
 .Python

@@ -27,9 +27,9 @@ function parseAttributes(tag: string): { [key: string]: string } {
 }
 
 function detailsTokenizer(src: string) {
-	// Updated regex to capture attributes inside <details>
-	const detailsRegex = /^<details(\s+[^>]*)?>\n/;
-	const summaryRegex = /^<summary>(.*?)<\/summary>\n/;
+  // Updated regexes: allow optional whitespace/newline after tags
+  const detailsRegex = /^<details(\s+[^>]*)?>\s*/;
+  const summaryRegex = /^<summary>(.*?)<\/summary>\s*/;
 
 	const detailsMatch = detailsRegex.exec(src);
 	if (detailsMatch) {
@@ -60,7 +60,9 @@ function detailsTokenizer(src: string) {
 }
 
 function detailsStart(src: string) {
-	return src.match(/^<details>/) ? 0 : -1;
+    // Find the first occurrence anywhere (even if preceded by whitespace/newlines)
+    const idx = src.search(/<details(\s+[^>]*)?>/);
+    return idx >= 0 ? idx : -1;
 }
 
 function detailsRenderer(token: any) {

@@ -64,8 +64,9 @@
 	import Photo from '../icons/Photo.svelte';
 	import Wrench from '../icons/Wrench.svelte';
 	import CommandLine from '../icons/CommandLine.svelte';
-	import Sparkles from '../icons/Sparkles.svelte';
+    import Sparkles from '../icons/Sparkles.svelte';
     import { getImageGenerationModels } from '$lib/apis/images';
+    import { getImageStyles } from '$lib/apis/images';
 
 	import { KokoroWorker } from '$lib/workers/KokoroWorker';
 	import InputVariablesModal from './MessageInput/InputVariablesModal.svelte';
@@ -100,6 +101,8 @@
 	export let imageGenerationEnabled = false;
 let imageModels: { id: string; name: string }[] = [];
 export let selectedImageModelComposer: string = '';
+let imageStyles: { id: string; name: string }[] = [];
+export let selectedImageStyleComposer: string = '';
 
 onMount(async () => {
     try {
@@ -114,6 +117,19 @@ onMount(async () => {
                 selectedImageModelComposer = imageModels?.[0]?.id ?? '';
             }
         }
+
+        // Fetch styles list from backend
+        imageStyles = (await getImageStyles(localStorage.token)) ?? [];
+
+        // Restore saved style if available
+        const savedStyle = localStorage.getItem('owui_image_style_id') || '';
+        if (!selectedImageStyleComposer || !imageStyles.some((s) => s.id === selectedImageStyleComposer)) {
+            if (savedStyle && imageStyles.some((s) => s.id === savedStyle)) {
+                selectedImageStyleComposer = savedStyle;
+            } else {
+                selectedImageStyleComposer = imageStyles?.[0]?.id ?? '';
+            }
+        }
     } catch (e) {
         console.debug('image models fetch error (composer)', e);
     }
@@ -124,6 +140,9 @@ $: (() => {
     try {
         if (selectedImageModelComposer) {
             localStorage.setItem('owui_image_model_id', selectedImageModelComposer);
+        }
+        if (selectedImageStyleComposer) {
+            localStorage.setItem('owui_image_style_id', selectedImageStyleComposer);
         }
     } catch (_) {
         // ignore storage errors
@@ -1872,6 +1891,19 @@ $: (() => {
 															>
 																{#each imageModels as m}
 																	<option value={m.id}>{m.name}</option>
+																{/each}
+															</select>
+														{/if}
+
+														<!-- Image style selector (composer) -->
+														{#if imageStyles && imageStyles.length > 0}
+															<select
+																bind:value={selectedImageStyleComposer}
+																class="ml-1 text-[10px] px-1 py-0.5 rounded bg-transparent border border-gray-100 dark:border-gray-800 text-gray-600 dark:text-gray-300"
+																aria-label={$i18n.t('Select image style')}
+															>
+																{#each imageStyles as s}
+																	<option value={s.id}>{s.name}</option>
 																{/each}
 															</select>
 														{/if}

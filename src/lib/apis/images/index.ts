@@ -196,11 +196,44 @@ export const getImageGenerationModels = async (token: string = '') => {
 	return res;
 };
 
+export const getImageStyles = async (token: string = '') => {
+    let error = null;
+
+    const res = await fetch(`${IMAGES_API_BASE_URL}/styles`, {
+        method: 'GET',
+        headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            ...(token && { authorization: `Bearer ${token}` })
+        }
+    })
+        .then(async (res) => {
+            if (!res.ok) throw await res.json();
+            return res.json();
+        })
+        .catch((err) => {
+            console.error(err);
+            if ('detail' in err) {
+                error = err.detail;
+            } else {
+                error = 'Server connection failed';
+            }
+            return null;
+        });
+
+    if (error) {
+        throw error;
+    }
+
+    return res as { id: string; name: string }[];
+};
+
 export const imageGenerations = async (
     token: string = '',
     prompt: string,
     model?: string,
-    size?: string
+    size?: string,
+    style?: string
 ) => {
 	let error = null;
 
@@ -214,7 +247,8 @@ export const imageGenerations = async (
     body: JSON.stringify({
         prompt: prompt,
         ...(model ? { model } : {}),
-        ...(size ? { size } : {})
+        ...(size ? { size } : {}),
+        ...(style ? { style } : {})
     })
 	})
 		.then(async (res) => {

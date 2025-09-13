@@ -71,6 +71,12 @@ async def generate_images_grid(
                 style_overrides = styles.get(style_id, {}) or {}
                 if style_overrides.get("width") and style_overrides.get("height"):
                     size = f"{int(style_overrides['width'])}x{int(style_overrides['height'])}"
+                try:
+                    log.info(
+                        f"AIPG style='{style_id}' overrides -> size={size} steps={style_overrides.get('steps')} cfg={style_overrides.get('cfg_scale')} sampler={style_overrides.get('sampler_name')}"
+                    )
+                except Exception:
+                    pass
     except Exception:
         # Non-fatal: ignore style if file missing or invalid
         style_overrides = {}

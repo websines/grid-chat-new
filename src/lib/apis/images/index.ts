@@ -196,7 +196,12 @@ export const getImageGenerationModels = async (token: string = '') => {
 	return res;
 };
 
-export const imageGenerations = async (token: string = '', prompt: string) => {
+export const imageGenerations = async (
+    token: string = '',
+    prompt: string,
+    model?: string,
+    size?: string
+) => {
 	let error = null;
 
 	const res = await fetch(`${IMAGES_API_BASE_URL}/generations`, {
@@ -206,9 +211,11 @@ export const imageGenerations = async (token: string = '', prompt: string) => {
 			'Content-Type': 'application/json',
 			...(token && { authorization: `Bearer ${token}` })
 		},
-		body: JSON.stringify({
-			prompt: prompt
-		})
+    body: JSON.stringify({
+        prompt: prompt,
+        ...(model ? { model } : {}),
+        ...(size ? { size } : {})
+    })
 	})
 		.then(async (res) => {
 			if (!res.ok) throw await res.json();

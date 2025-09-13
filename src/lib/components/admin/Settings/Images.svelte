@@ -304,6 +304,7 @@
 							<option value="comfyui">{$i18n.t('ComfyUI')}</option>
 							<option value="automatic1111">{$i18n.t('Automatic1111')}</option>
 							<option value="gemini">{$i18n.t('Gemini')}</option>
+							<option value="grid">{$i18n.t('Grid (AIPowerGrid)')}</option>
 						</select>
 					</div>
 				</div>
@@ -653,6 +654,13 @@
 								placeholder={$i18n.t('API Key')}
 								bind:value={config.gemini.GEMINI_API_KEY}
 							/>
+						</div>
+					</div>
+				{:else if config?.engine === 'grid'}
+					<div>
+						<div class=" mb-1.5 text-sm font-medium">{$i18n.t('Grid (AIPowerGrid)')}</div>
+						<div class="text-xs text-gray-500 dark:text-gray-400">
+							{$i18n.t('Uses server-side AIPG_API_KEY from .env. No additional settings required here.')}
 						</div>
 					</div>
 				{/if}

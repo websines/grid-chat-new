@@ -17,7 +17,7 @@
 
 	import { config, models, settings, temporaryChatEnabled, TTSWorker, user } from '$lib/stores';
 	import { synthesizeOpenAISpeech } from '$lib/apis/audio';
-	import { imageGenerations } from '$lib/apis/images';
+	import { imageGenerations, getImageGenerationModels } from '$lib/apis/images';
 	import {
 		copyToClipboard as _copyToClipboard,
 		approximateToHumanReadable,
@@ -162,6 +162,17 @@
 
 	let loadingSpeech = false;
 	let generatingImage = false;
+	let imageModels: { id: string; name: string }[] = [];
+	let selectedImageModel: string = '';
+
+	onMount(async () => {
+		try {
+			imageModels = (await getImageGenerationModels(localStorage.token)) ?? [];
+			selectedImageModel = imageModels?.[0]?.id ?? '';
+		} catch (e) {
+			console.debug('image models fetch error', e);
+		}
+	});
 
 	let showRateComment = false;
 
@@ -421,7 +432,7 @@
 
 	const generateImage = async (message: MessageType) => {
 		generatingImage = true;
-		const res = await imageGenerations(localStorage.token, message.content).catch((error) => {
+		const res = await imageGenerations(localStorage.token, message.content, selectedImageModel || undefined).catch((error) => {
 			toast.error(`${error}`);
 		});
 		console.log(res);
@@ -1131,6 +1142,17 @@
 											{/if}
 										</button>
 									</Tooltip>
+									{#if imageModels && imageModels.length > 0}
+										<select
+											bind:value={selectedImageModel}
+											class="ml-1 text-[10px] px-1 py-0.5 rounded bg-transparent border border-gray-100 dark:border-gray-800 text-gray-600 dark:text-gray-300"
+											aria-label={$i18n.t('Select image model')}
+										>
+											{#each imageModels as m}
+												<option value={m.id}>{m.name}</option>
+											{/each}
+										</select>
+									{/if}
 								{/if}
 
 								{#if message.usage}

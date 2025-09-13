@@ -102,6 +102,14 @@ async def generate_images_grid(
         used_status_endpoint = None
         submit_error = None
         for GEN_URL, STATUS_URL in candidates:
+            try:
+                # Log the submit attempt (without API key)
+                prompt_preview = (form_data.prompt[:120] + "...") if len(form_data.prompt) > 120 else form_data.prompt
+                log.info(
+                    f"AIPG submit -> url={GEN_URL} model={model_name or 'default'} size={width}x{height} steps={params.get('steps')} prompt='{prompt_preview}'"
+                )
+            except Exception:
+                pass
             r = await asyncio.to_thread(
                 requests.post,
                 url=GEN_URL,
@@ -110,10 +118,16 @@ async def generate_images_grid(
                 timeout=60,
             )
             last_http_response = r
+            try:
+                body_preview = r.text[:500]
+                log.info(f"AIPG submit <- status={r.status_code} body='{body_preview}'")
+            except Exception:
+                log.info(f"AIPG submit <- status={r.status_code} (no body preview)")
             if r.status_code in (200, 202):
                 try:
                     submit_res = r.json()
                     used_status_endpoint = STATUS_URL
+                    log.info(f"AIPG status base set -> {used_status_endpoint}")
                     break
                 except Exception:
                     submit_error = r.text
@@ -172,6 +186,11 @@ async def generate_images_grid(
                 timeout=60,
             )
             last_http_response = s
+            try:
+                log.debug(f"AIPG poll -> {status_url}")
+                log.debug(f"AIPG poll <- status={s.status_code} body='{s.text[:400]}'")
+            except Exception:
+                pass
             if s.status_code == 429:
                 retry_after = 0
                 try:
@@ -192,6 +211,7 @@ async def generate_images_grid(
 
             if status_data.get("done"):
                 gens = status_data.get("generations", []) or status_data.get("images", [])
+                log.info(f"AIPG done: generations={len(gens)}")
                 for gen in gens:
                     img_data = None
                     content_type = None
@@ -233,9 +253,11 @@ async def generate_images_grid(
                             }
                         )
                 if images:
+                    log.info(f"AIPG saved images: {len(images)}")
                     return images
                 break
             if status_data.get("faulted"):
+                log.error(f"AIPG faulted: {status_data}")
                 raise HTTPException(status_code=500, detail="Grid image generation failed")
 
         raise HTTPException(status_code=408, detail="Grid image generation timeout")

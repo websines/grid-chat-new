@@ -101,14 +101,34 @@
 let imageModels: { id: string; name: string }[] = [];
 export let selectedImageModelComposer: string = '';
 
-	onMount(async () => {
-		try {
-			imageModels = (await getImageGenerationModels(localStorage.token)) ?? [];
-			selectedImageModelComposer = imageModels?.[0]?.id ?? '';
-		} catch (e) {
-			console.debug('image models fetch error (composer)', e);
-		}
-	});
+onMount(async () => {
+    try {
+        imageModels = (await getImageGenerationModels(localStorage.token)) ?? [];
+        // Try to restore previously chosen image model
+        const savedModel = localStorage.getItem('owui_image_model_id') || '';
+        // Only set a default if none selected or selection no longer exists
+        if (!selectedImageModelComposer || !imageModels.some((m) => m.id === selectedImageModelComposer)) {
+            if (savedModel && imageModels.some((m) => m.id === savedModel)) {
+                selectedImageModelComposer = savedModel;
+            } else {
+                selectedImageModelComposer = imageModels?.[0]?.id ?? '';
+            }
+        }
+    } catch (e) {
+        console.debug('image models fetch error (composer)', e);
+    }
+});
+
+// Persist composer-selected image model so other views can use it as default
+$: (() => {
+    try {
+        if (selectedImageModelComposer) {
+            localStorage.setItem('owui_image_model_id', selectedImageModelComposer);
+        }
+    } catch (_) {
+        // ignore storage errors
+    }
+})();
 	export let webSearchEnabled = false;
 	export let codeInterpreterEnabled = false;
 

@@ -1640,20 +1640,31 @@ let selectedImageModelComposer = '';
 		chats.set(await getChatList(localStorage.token, $currentChatPage));
 	};
 
-	const getFeatures = () => {
-		let features = {};
+    const getEffectiveImageModel = () => {
+        // Prefer bound composer value; if empty, fall back to last persisted selection
+        try {
+            if (selectedImageModelComposer && selectedImageModelComposer.trim() !== '') return selectedImageModelComposer;
+            const saved = localStorage.getItem('owui_image_model_id') || '';
+            return saved || '';
+        } catch (_) {
+            return selectedImageModelComposer || '';
+        }
+    };
+
+    const getFeatures = () => {
+        let features = {};
 
 		if ($config?.features)
 			features = {
 				image_generation:
 					$config?.features?.enable_image_generation &&
 					($user?.role === 'admin' || $user?.permissions?.features?.image_generation)
-						? imageGenerationEnabled
-						: false,
-				// Include image model hint for backend when image generation is enabled
-				...(imageGenerationEnabled && selectedImageModelComposer
-					? { image_model: selectedImageModelComposer }
-					: {}),
+            ? imageGenerationEnabled
+            : false,
+            // Include image model hint for backend when image generation is enabled
+            ...(imageGenerationEnabled && getEffectiveImageModel()
+                ? { image_model: getEffectiveImageModel() }
+                : {}),
 				code_interpreter:
 					$config?.features?.enable_code_interpreter &&
 					($user?.role === 'admin' || $user?.permissions?.features?.code_interpreter)
@@ -1774,13 +1785,13 @@ let selectedImageModelComposer = '';
 			}))
 			.filter((message) => message?.role === 'user' || message?.content?.trim());
 
-		const res = await generateOpenAIChatCompletion(
-			localStorage.token,
-			{
-				stream: stream,
-				model: model.id,
-				messages: messages,
-				params: {
+        const res = await generateOpenAIChatCompletion(
+            localStorage.token,
+            {
+                stream: stream,
+                model: model.id,
+                messages: messages,
+                params: {
 					...$settings?.params,
 					...params,
 					stop:
@@ -1796,18 +1807,18 @@ let selectedImageModelComposer = '';
 				filter_ids: selectedFilterIds.length > 0 ? selectedFilterIds : undefined,
 				tool_ids: selectedToolIds.length > 0 ? selectedToolIds : undefined,
 				tool_servers: $toolServers,
-				features: getFeatures(),
-				// Also send image_model at top-level to ensure backend has it even after features are popped
-				...(imageGenerationEnabled && selectedImageModelComposer
-					? { image_model: selectedImageModelComposer }
-					: {}),
-				variables: {
-					...getPromptVariables($user?.name, $settings?.userLocation ? userLocation : undefined)
-				},
-				model_item: $models.find((m) => m.id === model.id),
+                features: getFeatures(),
+                // Also send image_model at top-level to ensure backend has it
+                ...(imageGenerationEnabled && getEffectiveImageModel()
+                    ? { image_model: getEffectiveImageModel() }
+                    : {}),
+                variables: {
+                    ...getPromptVariables($user?.name, $settings?.userLocation ? userLocation : undefined)
+                },
+                model_item: $models.find((m) => m.id === model.id),
 
-				session_id: $socket?.id,
-				chat_id: $chatId,
+                session_id: $socket?.id,
+                chat_id: $chatId,
 				id: responseMessageId,
 
 				background_tasks: {

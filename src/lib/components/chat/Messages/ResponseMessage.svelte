@@ -165,14 +165,34 @@
 	let imageModels: { id: string; name: string }[] = [];
 	let selectedImageModel: string = '';
 
-	onMount(async () => {
+	// Persist per-message image model selection so composer/chat can reuse it
+	$: (() => {
 		try {
-			imageModels = (await getImageGenerationModels(localStorage.token)) ?? [];
-			selectedImageModel = imageModels?.[0]?.id ?? '';
-		} catch (e) {
-			console.debug('image models fetch error', e);
+			if (selectedImageModel) {
+				localStorage.setItem('owui_image_model_id', selectedImageModel);
+			}
+		} catch (_) {
+			// ignore storage errors
 		}
-	});
+	})();
+
+onMount(async () => {
+    try {
+        imageModels = (await getImageGenerationModels(localStorage.token)) ?? [];
+        // Only set a default if none selected or selection no longer exists
+        if (!selectedImageModel || !imageModels.some((m) => m.id === selectedImageModel)) {
+            // Prefer the composer selection persisted in localStorage if valid
+            const savedModel = localStorage.getItem('owui_image_model_id') || '';
+            if (savedModel && imageModels.some((m) => m.id === savedModel)) {
+                selectedImageModel = savedModel;
+            } else {
+                selectedImageModel = imageModels?.[0]?.id ?? '';
+            }
+        }
+    } catch (e) {
+        console.debug('image models fetch error', e);
+    }
+});
 
 	let showRateComment = false;
 
@@ -432,7 +452,16 @@
 
 	const generateImage = async (message: MessageType) => {
 		generatingImage = true;
-		const res = await imageGenerations(localStorage.token, message.content, selectedImageModel || undefined).catch((error) => {
+		// Prefer per-message selection; fallback to composer selection persisted in localStorage
+		const persistedModel = (() => {
+			try {
+				return localStorage.getItem('owui_image_model_id') || '';
+			} catch (_) {
+				return '';
+			}
+		})();
+		const modelToUse = selectedImageModel || persistedModel || undefined;
+		const res = await imageGenerations(localStorage.token, message.content, modelToUse).catch((error) => {
 			toast.error(`${error}`);
 		});
 		console.log(res);

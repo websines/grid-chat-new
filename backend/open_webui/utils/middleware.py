@@ -584,6 +584,10 @@ async def chat_image_generation_handler(
 
         if request.app.state.config.IMAGE_GENERATION_ENGINE == "grid":
             model_hint = form_data.get("image_model")
+            try:
+                log.info(f"Image generation (Grid): model_hint={model_hint}")
+            except Exception:
+                pass
             images = await generate_images_grid(
                 request=request,
                 form_data=_GenForm(**{"prompt": prompt, **({"model": model_hint} if model_hint else {})}),
@@ -592,6 +596,10 @@ async def chat_image_generation_handler(
             )
         else:
             model_hint = form_data.get("image_model")
+            try:
+                log.info(f"Image generation (Non-Grid): model_hint={model_hint}")
+            except Exception:
+                pass
             images = await image_generations(
                 request=request,
                 form_data=GenerateImageForm(**{"prompt": prompt, **({"model": model_hint} if model_hint else {})}),

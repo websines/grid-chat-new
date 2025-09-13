@@ -782,9 +782,9 @@ async def image_generations(
             # Known patterns (try in order)
             candidates += [
                 # Preferred canonical form (with 'api') per latest spec
-                (f"{GRID_BASE_URL}/api/v2/generate/async", f"{GRID_BASE_URL}/api/v2/status"),
+                (f"{GRID_BASE_URL}/api/v2/generate/async", f"{GRID_BASE_URL}/api/v2/generate/status"),
                 # Other common variants (kept for compatibility)
-                (f"{GRID_BASE_URL}/v2/generate/async", f"{GRID_BASE_URL}/v2/status"),
+                (f"{GRID_BASE_URL}/v2/generate/async", f"{GRID_BASE_URL}/v2/generate/status"),
                 (f"{GRID_BASE_URL}/api/v2/generate/image/async", f"{GRID_BASE_URL}/api/v2/generate/image/status"),
                 (f"{GRID_BASE_URL}/api/v2/generate/images/async", f"{GRID_BASE_URL}/api/v2/generate/images/status"),
                 (f"{GRID_BASE_URL}/api/v2/images/generate/async", f"{GRID_BASE_URL}/api/v2/images/generate/status"),

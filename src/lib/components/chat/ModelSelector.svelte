@@ -4,6 +4,7 @@
 	import { toast } from 'svelte-sonner';
 	import Selector from './ModelSelector/Selector.svelte';
 	import Tooltip from '../common/Tooltip.svelte';
+	import AIPGBadge from '../branding/AIPGBadge.svelte';
 
 	import { updateUserSettings } from '$lib/apis/users';
 	const i18n = getContext('i18n');
@@ -49,7 +50,7 @@
 	{#each selectedModels as selectedModel, selectedModelIdx}
 		<div class="flex w-full max-w-fit">
 			<div class="overflow-hidden w-full">
-				<div class="max-w-full {($settings?.highContrastMode ?? false) ? 'm-1' : 'mr-1'}">
+				<div class="max-w-full {($settings?.highContrastMode ?? false) ? 'm-1' : 'mr-1'} flex items-center gap-1">
 					<Selector
 						id={`${selectedModelIdx}`}
 						placeholder={$i18n.t('Select a model')}
@@ -61,6 +62,9 @@
 						{pinModelHandler}
 						bind:value={selectedModel}
 					/>
+					{#if selectedModel && $models.find(m => m.id === selectedModel)?.owned_by === 'grid'}
+						<AIPGBadge size={12} className="-translate-y-[0.5px]" />
+					{/if}
 				</div>
 			</div>
 

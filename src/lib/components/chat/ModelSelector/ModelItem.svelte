@@ -16,6 +16,7 @@
 	import { toast } from 'svelte-sonner';
 	import Tag from '$lib/components/icons/Tag.svelte';
 	import Label from '$lib/components/icons/Label.svelte';
+	import AIPGBadge from '$lib/components/branding/AIPGBadge.svelte';
 
 	const i18n = getContext('i18n');
 
@@ -85,12 +86,15 @@
 				</Tooltip>
 			</div>
 
-			<div class="flex items-center">
+			<div class="flex items-center gap-1">
 				<Tooltip content={`${item.label} (${item.value})`} placement="top-start">
 					<div class="line-clamp-1">
 						{item.label}
 					</div>
 				</Tooltip>
+				{#if item.model?.owned_by === 'grid'}
+					<AIPGBadge size={10} />
+				{/if}
 			</div>
 
 			<div class=" shrink-0 flex items-center gap-2">

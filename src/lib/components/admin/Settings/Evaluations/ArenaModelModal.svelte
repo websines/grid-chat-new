@@ -37,7 +37,7 @@
 		}
 	};
 
-	let profileImageUrl = `${WEBUI_BASE_URL}/favicon.png`;
+let profileImageUrl = `/favicon.png`;
 	let description = '';
 
 	let selectedModelId = '';
@@ -93,7 +93,7 @@
 
 		name = '';
 		id = '';
-		profileImageUrl = `${WEBUI_BASE_URL}/favicon.png`;
+		profileImageUrl = `/favicon.png`;
 		description = '';
 		modelIds = [];
 		selectedModelId = '';

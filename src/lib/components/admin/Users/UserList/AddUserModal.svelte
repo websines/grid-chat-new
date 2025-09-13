@@ -269,7 +269,7 @@
 									)}
 									<a
 										class="underline dark:text-gray-200"
-										href="{WEBUI_BASE_URL}/static/user-import.csv"
+										href="/static/user-import.csv"
 									>
 										{$i18n.t('Click here to download user import template file.')}
 									</a>

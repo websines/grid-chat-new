@@ -30,6 +30,9 @@ from open_webui.routers.openai import (
 from open_webui.routers.ollama import (
     generate_chat_completion as generate_ollama_chat_completion,
 )
+from open_webui.routers.grid_models import (
+    grid_chat_completion_from_form_data as generate_grid_chat_completion,
+)
 
 from open_webui.routers.pipelines import (
     process_pipeline_inlet_filter,
@@ -274,6 +277,12 @@ async def generate_chat_completion(
                 )
             else:
                 return convert_response_ollama_to_openai(response)
+        elif model.get("owned_by") == "grid" or (model.get("id", "").startswith("grid_")):
+            # Grid models: use AIPowerGrid async job + poll, return OpenAI-compatible dict
+            # Ensure stream is disabled (Grid path here is non-streaming)
+            form_data = {**form_data}
+            form_data["stream"] = False
+            return await generate_grid_chat_completion(form_data)
         else:
             return await generate_openai_chat_completion(
                 request=request,

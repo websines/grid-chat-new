@@ -165,11 +165,17 @@
 							{title}
 						</div>
 
-						<div class="flex text-sm justify-between items-center mt-1">
-							<div class="text-gray-400">
-								{dayjs(chat.chat.timestamp).format('LLL')}
-							</div>
+					<div class="flex text-sm justify-between items-center mt-1">
+						<div class="text-gray-400">
+							{dayjs(chat.chat.timestamp).format('LLL')}
 						</div>
+						{#if ($models?.find((m) => m.id === (selectedModels?.[0] ?? ''))?.owned_by ?? '') === 'grid' || (selectedModels?.[0] ?? '').startsWith('grid_')}
+							<div class="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+								<img src="/branding/aipg-logo.png" alt="AIPG" width="12" height="12" class="opacity-80" on:error={(e) => (e.currentTarget.style.display = 'none')} />
+								<span>AIPG</span>
+							</div>
+						{/if}
+					</div>
 					</div>
 				</div>
 

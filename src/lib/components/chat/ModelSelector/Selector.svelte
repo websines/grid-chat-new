@@ -512,21 +512,29 @@
 			</div>
 
 			<div class="px-3 max-h-64 overflow-y-auto group relative">
-				{#each filteredItems as item, index}
-					<ModelItem
-						{selectedModelIdx}
-						{item}
-						{index}
-						{value}
-						{pinModelHandler}
-						{unloadModelHandler}
-						onClick={() => {
-							value = item.value;
-							selectedModelIdx = index;
+					{#each filteredItems as item, index}
+						<ModelItem
+							{selectedModelIdx}
+							{item}
+							{index}
+							{value}
+							{pinModelHandler}
+							{unloadModelHandler}
+							onClick={() => {
+								value = item.value;
+								selectedModelIdx = index;
 
-							show = false;
-						}}
-					/>
+								show = false;
+							}}
+						>
+							<!-- Secondary AIPG branding for Grid models in picker -->
+							{#if item?.model?.owned_by === 'grid' || (item?.model?.id ?? '').startsWith('grid_')}
+								<span class="ml-1.5 inline-flex items-center gap-1 text-[10px] text-gray-500 dark:text-gray-400">
+									<img src="/branding/aipg-logo.png" alt="AIPG" width="12" height="12" class="opacity-80" on:error={(e) => (e.currentTarget.style.display = 'none')} />
+									<span>AIPG</span>
+								</span>
+							{/if}
+						</ModelItem>
 				{:else}
 					<div class="">
 						<div class="block px-3 py-2 text-sm text-gray-700 dark:text-gray-100">

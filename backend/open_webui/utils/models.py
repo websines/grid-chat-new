@@ -6,7 +6,7 @@ import sys
 from aiocache import cached
 from fastapi import Request
 
-from open_webui.routers import openai, ollama
+from open_webui.routers import openai, ollama, grid_models
 from open_webui.functions import get_function_models
 
 
@@ -56,6 +56,43 @@ async def fetch_openai_models(request: Request, user: UserModel = None):
     return openai_response["data"]
 
 
+async def fetch_grid_models(request: Request, user: UserModel = None):
+    try:
+        # Returns plain dicts from router helper
+        models = await grid_models.get_grid_models_for_openwebui()
+        mapped = []
+        for m in models:
+            if isinstance(m, dict):
+                mapped.append(
+                    {
+                        "id": m.get("id", ""),
+                        "name": m.get("name", "grid-model"),
+                        "object": m.get("object", "model"),
+                        "created": m.get("created", int(time.time())),
+                        "owned_by": m.get("owned_by", "grid"),
+                        "connection_type": "remote",
+                        "tags": [],
+                        "info": {"meta": m.get("meta", {})},
+                    }
+                )
+            else:
+                # best-effort fallback if type unexpected
+                mapped.append(
+                    {
+                        "id": getattr(m, "id", ""),
+                        "name": getattr(m, "name", "grid-model"),
+                        "object": "model",
+                        "created": int(time.time()),
+                        "owned_by": "grid",
+                        "connection_type": "remote",
+                        "tags": [],
+                    }
+                )
+        return mapped
+    except Exception as e:
+        log.debug(f"fetch_grid_models() error: {e}")
+        return []
+
 async def get_all_base_models(request: Request, user: UserModel = None):
     openai_task = (
         fetch_openai_models(request, user)
@@ -67,13 +104,14 @@ async def get_all_base_models(request: Request, user: UserModel = None):
         if request.app.state.config.ENABLE_OLLAMA_API
         else asyncio.sleep(0, result=[])
     )
+    grid_task = fetch_grid_models(request, user)
     function_task = get_function_models(request)
 
-    openai_models, ollama_models, function_models = await asyncio.gather(
-        openai_task, ollama_task, function_task
+    openai_models, ollama_models, grid_models_list, function_models = await asyncio.gather(
+        openai_task, ollama_task, grid_task, function_task
     )
 
-    return function_models + openai_models + ollama_models
+    return function_models + openai_models + ollama_models + grid_models_list
 
 
 async def get_all_models(request, refresh: bool = False, user: UserModel = None):

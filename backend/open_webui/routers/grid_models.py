@@ -10,6 +10,7 @@ import time
 from datetime import datetime
 from typing import List, Dict, Optional, Any
 from urllib.parse import quote
+import os
 
 import aiohttp
 from fastapi import APIRouter, HTTPException, Depends, Request
@@ -25,7 +26,8 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 # Grid API configuration
-GRID_API_KEY = "SRjE7PuHTW1SG4rd_AqYGg"
+# NOTE: API key is read from environment to avoid hardcoding secrets.
+AIPG_API_KEY = os.getenv("AIPG_API_KEY", "")
 GRID_BASE_URL = "https://api.aipowergrid.io"
 GRID_MODELS_ENDPOINT = f"{GRID_BASE_URL}/api/v2/status/models?type=text"
 GRID_WORKERS_ENDPOINT = f"{GRID_BASE_URL}/api/v2/workers?type=text"
@@ -63,7 +65,8 @@ class GridModelsProvider:
     """Provider for dynamic Grid models"""
     
     def __init__(self):
-        self.headers = {"apikey": GRID_API_KEY}
+        # Only include apikey header when available
+        self.headers = {"apikey": AIPG_API_KEY} if AIPG_API_KEY else {}
         self.cached_models = []
         self.cache_time = 0
         self.cache_duration = 30  # 30 seconds cache
@@ -140,10 +143,39 @@ class GridModelsProvider:
 # Global provider instance
 grid_provider = GridModelsProvider()
 
+
+def _extract_worker_from_status(status: dict) -> Optional[str]:
+    """Best-effort extraction of worker identity from Grid status payload."""
+    if not isinstance(status, dict):
+        return None
+    # Common possible keys seen in job status payloads
+    for key in [
+        "worker",
+        "worker_name",
+        "node",
+        "hostname",
+        "producer",
+        "executor",
+    ]:
+        val = status.get(key)
+        if isinstance(val, str) and val.strip():
+            return val
+    # Sometimes embedded in first generation payload
+    gens = status.get("generations") or []
+    if gens and isinstance(gens, list):
+        gen0 = gens[0]
+        for key in ["worker", "worker_name", "node", "hostname"]:
+            val = gen0.get(key) if isinstance(gen0, dict) else None
+            if isinstance(val, str) and val.strip():
+                return val
+    return None
+
 @router.get("/api/v1/models/grid")
 async def get_grid_models():
     """Get available Grid models for the dropdown"""
     try:
+        if not grid_provider.headers.get("apikey"):
+            raise HTTPException(status_code=401, detail="AIPG_API_KEY is not set in environment")
         models = await grid_provider.get_models()
         
         # Convert to Open WebUI model format
@@ -181,6 +213,8 @@ async def get_grid_models():
 async def refresh_grid_models():
     """Force refresh of Grid models cache"""
     try:
+        if not grid_provider.headers.get("apikey"):
+            raise HTTPException(status_code=401, detail="AIPG_API_KEY is not set in environment")
         # Clear cache to force refresh
         grid_provider.cached_models = []
         grid_provider.cache_time = 0
@@ -196,6 +230,8 @@ async def refresh_grid_models():
 async def get_grid_workers():
     """Get available Grid workers"""
     try:
+        if not grid_provider.headers.get("apikey"):
+            raise HTTPException(status_code=401, detail="AIPG_API_KEY is not set in environment")
         workers = await grid_provider.get_workers()
         return {"workers": [worker.dict() for worker in workers]}
         
@@ -207,6 +243,8 @@ async def get_grid_workers():
 async def grid_chat_completion(request: Request):
     """Handle Grid model chat completions"""
     try:
+        if not grid_provider.headers.get("apikey"):
+            raise HTTPException(status_code=401, detail="AIPG_API_KEY is not set in environment")
         body = await request.json()
         
         # Extract parameters
@@ -251,6 +289,7 @@ async def grid_chat_completion(request: Request):
         )
         
         # Submit generation request
+        t_start = time.time()
         async with aiohttp.ClientSession() as session:
             async with session.post(
                 GRID_GENERATE_ENDPOINT, 
@@ -283,6 +322,13 @@ async def grid_chat_completion(request: Request):
                                 generations = status_data.get("generations", [])
                                 if generations:
                                     generated_text = generations[0].get("text", "")
+                                    t_end = time.time()
+                                    elapsed_ms = int((t_end - t_start) * 1000)
+                                    prompt_tokens = len(user_message.split())
+                                    completion_tokens = len(generated_text.split())
+                                    total_tokens = prompt_tokens + completion_tokens
+                                    worker_name = _extract_worker_from_status(status_data)
+                                    tps = (completion_tokens / max((t_end - t_start), 1e-6)) if completion_tokens > 0 else 0.0
                                     
                                     # Return in OpenAI-compatible format
                                     return {
@@ -299,9 +345,14 @@ async def grid_chat_completion(request: Request):
                                             "finish_reason": "stop"
                                         }],
                                         "usage": {
-                                            "prompt_tokens": len(user_message.split()),
-                                            "completion_tokens": len(generated_text.split()),
-                                            "total_tokens": len(user_message.split()) + len(generated_text.split())
+                                            "provider": "grid",
+                                            "job_id": request_id,
+                                            **({"worker": worker_name} if worker_name else {}),
+                                            "elapsed_ms": elapsed_ms,
+                                            "tokens_per_sec": tps,
+                                            "prompt_tokens": prompt_tokens,
+                                            "completion_tokens": completion_tokens,
+                                            "total_tokens": total_tokens,
                                         }
                                     }
                                 
@@ -401,6 +452,7 @@ async def grid_chat_completion_from_form_data(form_data: dict):
         )
         
         # Submit generation request
+        t_start = time.time()
         async with aiohttp.ClientSession() as session:
             async with session.post(
                 GRID_GENERATE_ENDPOINT, 
@@ -433,6 +485,13 @@ async def grid_chat_completion_from_form_data(form_data: dict):
                                 generations = status_data.get("generations", [])
                                 if generations:
                                     generated_text = generations[0].get("text", "")
+                                    t_end = time.time()
+                                    elapsed_ms = int((t_end - t_start) * 1000)
+                                    prompt_tokens = len(conversation_prompt.split())
+                                    completion_tokens = len(generated_text.split())
+                                    total_tokens = prompt_tokens + completion_tokens
+                                    worker_name = _extract_worker_from_status(status_data)
+                                    tps = (completion_tokens / max((t_end - t_start), 1e-6)) if completion_tokens > 0 else 0.0
                                     
                                     # Return in OpenAI-compatible format
                                     # This will be processed by the main chat completion pipeline
@@ -450,9 +509,14 @@ async def grid_chat_completion_from_form_data(form_data: dict):
                                             "finish_reason": "stop"
                                         }],
                                         "usage": {
-                                            "prompt_tokens": len(conversation_prompt.split()),
-                                            "completion_tokens": len(generated_text.split()),
-                                            "total_tokens": len(conversation_prompt.split()) + len(generated_text.split())
+                                            "provider": "grid",
+                                            "job_id": request_id,
+                                            **({"worker": worker_name} if worker_name else {}),
+                                            "elapsed_ms": elapsed_ms,
+                                            "tokens_per_sec": tps,
+                                            "prompt_tokens": prompt_tokens,
+                                            "completion_tokens": completion_tokens,
+                                            "total_tokens": total_tokens,
                                         }
                                     }
                                 
@@ -514,6 +578,7 @@ async def grid_chat_completion_from_form_data(form_data: dict):
         )
         
         # Submit generation request
+        t_start = time.time()
         async with aiohttp.ClientSession() as session:
             async with session.post(
                 GRID_GENERATE_ENDPOINT, 
@@ -549,6 +614,13 @@ async def grid_chat_completion_from_form_data(form_data: dict):
                                     
                                     # Create OpenAI-compatible response format
                                     # This will be processed by Open WebUI's native pipeline
+                                    t_end = time.time()
+                                    elapsed_ms = int((t_end - t_start) * 1000)
+                                    prompt_tokens = len(user_message.split())
+                                    completion_tokens = len(generated_text.split())
+                                    total_tokens = prompt_tokens + completion_tokens
+                                    worker_name = _extract_worker_from_status(status_data)
+                                    tps = (completion_tokens / max((t_end - t_start), 1e-6)) if completion_tokens > 0 else 0.0
                                     response_data = {
                                         "id": f"grid_{request_id}",
                                         "object": "chat.completion",
@@ -563,9 +635,14 @@ async def grid_chat_completion_from_form_data(form_data: dict):
                                             "finish_reason": "stop"
                                         }],
                                         "usage": {
-                                            "prompt_tokens": len(user_message.split()),
-                                            "completion_tokens": len(generated_text.split()),
-                                            "total_tokens": len(user_message.split()) + len(generated_text.split())
+                                            "provider": "grid",
+                                            "job_id": request_id,
+                                            **({"worker": worker_name} if worker_name else {}),
+                                            "elapsed_ms": elapsed_ms,
+                                            "tokens_per_sec": tps,
+                                            "prompt_tokens": prompt_tokens,
+                                            "completion_tokens": completion_tokens,
+                                            "total_tokens": total_tokens,
                                         }
                                     }
                                     
@@ -604,34 +681,33 @@ async def grid_chat_completion_from_form_data(form_data: dict):
 
 # Hook into Open WebUI's model loading system
 async def get_grid_models_for_openwebui():
-    """Get Grid models in Open WebUI format"""
+    """Get Grid models as plain dicts compatible with Open WebUI model list."""
     try:
         models = await grid_provider.get_models()
         openwebui_models = []
-        
+
         for model in models:
-            # Create Open WebUI model object
-            openwebui_model = Model(
-                id=f"grid_{model.name}",
-                name=model.name,
-                object="model",
-                created=int(time.time()),
-                owned_by="grid",
-                permission=[],
-                root=f"grid_{model.name}",
-                parent=None,
-                meta={
+            openwebui_model = {
+                "id": f"grid_{model.name}",
+                "name": model.name,
+                "object": "model",
+                "created": int(time.time()),
+                "owned_by": "grid",
+                "permission": [],
+                "root": f"grid_{model.name}",
+                "parent": None,
+                "meta": {
                     "description": f"Grid model: {model.name}",
                     "queue_length": model.queued,
                     "eta": model.eta,
                     "performance": str(model.performance),
-                    "worker_count": model.count
-                }
-            )
+                    "worker_count": model.count,
+                },
+            }
             openwebui_models.append(openwebui_model)
-        
+
         return openwebui_models
-        
+
     except Exception as e:
         logger.error(f"Error getting Grid models for Open WebUI: {e}")
-        return [] 
+        return []

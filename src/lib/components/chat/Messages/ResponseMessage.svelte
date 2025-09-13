@@ -53,6 +53,7 @@
 	import { flyAndScale } from '$lib/utils/transitions';
 	import RegenerateMenu from './ResponseMessage/RegenerateMenu.svelte';
 	import StatusHistory from './ResponseMessage/StatusHistory.svelte';
+    import AIPGBadge from '$lib/components/branding/AIPGBadge.svelte';
 
 	interface MessageType {
 		id: string;
@@ -778,6 +779,23 @@
 											updateChat();
 										}}
 									/>
+								{/if}
+
+								{#if message?.usage && (message?.usage?.provider === 'grid' || (model?.owned_by ?? '') === 'grid' || (message?.model ?? '').startsWith('grid_'))}
+									<Tooltip
+										content={`${message?.usage?.provider ?? 'grid'}${message?.usage?.worker ? ` • ${message.usage.worker}` : ''} • ${isFinite(Number(message?.usage?.tokens_per_sec)) ? Number(message.usage.tokens_per_sec).toFixed(0) : 'n/a'} tok/s\nElapsed: ${message?.usage?.elapsed_ms ?? 'n/a'} ms\nTokens: ${message?.usage?.completion_tokens ?? 'n/a'} (of ${message?.usage?.total_tokens ?? 'n/a'})\nJob: ${message?.usage?.job_id ?? 'n/a'}`}
+										placement="bottom"
+									>
+										<div
+											class="{isLastMessage || ($settings?.highContrastMode ?? false)
+												? 'visible'
+												: 'invisible group-hover:visible'} flex items-center gap-1 px-1.5 py-0.5 rounded-lg text-xs text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/5"
+											role="status"
+										>
+											<AIPGBadge size={12} className="mr-0.5" />
+											<span class="whitespace-nowrap">Grid • {message?.usage?.worker ?? 'worker'} • {isFinite(Number(message?.usage?.tokens_per_sec)) ? Number(message.usage.tokens_per_sec).toFixed(0) : 'n/a'} tok/s</span>
+										</div>
+									</Tooltip>
 								{/if}
 
 								{#if message?.error}

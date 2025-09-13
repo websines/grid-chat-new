@@ -54,6 +54,7 @@
 	import RegenerateMenu from './ResponseMessage/RegenerateMenu.svelte';
 	import StatusHistory from './ResponseMessage/StatusHistory.svelte';
     import AIPGBadge from '$lib/components/branding/AIPGBadge.svelte';
+    import { getImageStyles } from '$lib/apis/images';
 
 	interface MessageType {
 		id: string;
@@ -161,20 +162,25 @@
 	let speakingIdx: number | undefined;
 
 	let loadingSpeech = false;
-	let generatingImage = false;
-	let imageModels: { id: string; name: string }[] = [];
-	let selectedImageModel: string = '';
+let generatingImage = false;
+let imageModels: { id: string; name: string }[] = [];
+let selectedImageModel: string = '';
+let imageStyles: { id: string; name: string }[] = [];
+let selectedImageStyle: string = '';
 
-	// Persist per-message image model selection so composer/chat can reuse it
-	$: (() => {
-		try {
-			if (selectedImageModel) {
-				localStorage.setItem('owui_image_model_id', selectedImageModel);
-			}
-		} catch (_) {
-			// ignore storage errors
-		}
-	})();
+// Persist per-message image model selection so composer/chat can reuse it
+$: (() => {
+    try {
+        if (selectedImageModel) {
+            localStorage.setItem('owui_image_model_id', selectedImageModel);
+        }
+        if (selectedImageStyle) {
+            localStorage.setItem('owui_image_style_id', selectedImageStyle);
+        }
+    } catch (_) {
+        // ignore storage errors
+    }
+})();
 
 onMount(async () => {
     try {
@@ -187,6 +193,17 @@ onMount(async () => {
                 selectedImageModel = savedModel;
             } else {
                 selectedImageModel = imageModels?.[0]?.id ?? '';
+            }
+        }
+        // Fetch styles list from backend
+        imageStyles = (await getImageStyles(localStorage.token)) ?? [];
+        // Restore saved style selection if valid
+        const savedStyle = localStorage.getItem('owui_image_style_id') || '';
+        if (!selectedImageStyle || !imageStyles.some((s) => s.id === selectedImageStyle)) {
+            if (savedStyle && imageStyles.some((s) => s.id === savedStyle)) {
+                selectedImageStyle = savedStyle;
+            } else {
+                selectedImageStyle = imageStyles?.[0]?.id ?? '';
             }
         }
     } catch (e) {
@@ -460,10 +477,18 @@ onMount(async () => {
 				return '';
 			}
 		})();
-		const modelToUse = selectedImageModel || persistedModel || undefined;
-		const res = await imageGenerations(localStorage.token, message.content, modelToUse).catch((error) => {
-			toast.error(`${error}`);
-		});
+    const modelToUse = selectedImageModel || persistedModel || undefined;
+    const persistedStyle = (() => {
+        try {
+            return localStorage.getItem('owui_image_style_id') || '';
+        } catch (_) {
+            return '';
+        }
+    })();
+    const styleToUse = selectedImageStyle || persistedStyle || undefined;
+    const res = await imageGenerations(localStorage.token, message.content, modelToUse, undefined, styleToUse).catch((error) => {
+        toast.error(`${error}`);
+    });
 		console.log(res);
 
 		if (res) {
@@ -1179,6 +1204,18 @@ onMount(async () => {
 										>
 											{#each imageModels as m}
 												<option value={m.id}>{m.name}</option>
+											{/each}
+										</select>
+									{/if}
+
+									{#if imageStyles && imageStyles.length > 0}
+										<select
+											bind:value={selectedImageStyle}
+											class="ml-1 text-[10px] px-1 py-0.5 rounded bg-transparent border border-gray-100 dark:border-gray-800 text-gray-600 dark:text-gray-300"
+											aria-label={$i18n.t('Select image style')}
+										>
+											{#each imageStyles as s}
+												<option value={s.id}>{s.name}</option>
 											{/each}
 										</select>
 									{/if}

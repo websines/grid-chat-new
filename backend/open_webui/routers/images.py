@@ -51,12 +51,46 @@ async def generate_images_grid(
     """Helper to generate images via AIPowerGrid with optional progress callback.
     progress_cb: async callable(dict) — will be awaited with status dicts.
     """
+    # Defaults
     size = "512x512"
     if request.app.state.config.IMAGE_SIZE and "x" in request.app.state.config.IMAGE_SIZE:
         size = request.app.state.config.IMAGE_SIZE
     if getattr(form_data, "size", None) and "x" in form_data.size:
         size = form_data.size
+
+    # Optional: apply style overrides for size before splitting
+    style_overrides = {}
+    try:
+        style_id = getattr(form_data, "style", None)
+        if style_id:
+            # styles.json path relative to this file: ../../styles/styles.json
+            styles_path = (Path(__file__).resolve().parents[3] / "styles" / "styles.json")
+            if styles_path.exists():
+                with styles_path.open("r", encoding="utf-8") as f:
+                    styles = json.load(f)
+                style_overrides = styles.get(style_id, {}) or {}
+                if style_overrides.get("width") and style_overrides.get("height"):
+                    size = f"{int(style_overrides['width'])}x{int(style_overrides['height'])}"
+    except Exception:
+        # Non-fatal: ignore style if file missing or invalid
+        style_overrides = {}
+
     width, height = tuple(map(int, size.split("x")))
+
+    # Optional: load style overrides
+    style_overrides = {}
+    try:
+        if getattr(form_data, "style", None):
+            styles_path = (Path(__file__).resolve().parents[3] / "styles" / "styles.json")
+            if styles_path.exists():
+                with styles_path.open("r", encoding="utf-8") as f:
+                    styles = json.load(f)
+                style_overrides = styles.get(form_data.style, {}) or {}
+                if style_overrides.get("width") and style_overrides.get("height"):
+                    width = int(style_overrides["width"])
+                    height = int(style_overrides["height"])
+    except Exception:
+        style_overrides = {}
 
     last_http_response = None
     try:
@@ -86,8 +120,20 @@ async def generate_images_grid(
         headers = {"apikey": AIPG_API_KEY, "Content-Type": "application/json"}
         model_name = (form_data.model or "").replace("grid_", "") if getattr(form_data, "model", None) else None
         params = {"width": width, "height": height}
-        if request.app.state.config.IMAGE_STEPS is not None:
+        # Steps: prefer style override, else global config
+        if style_overrides.get("steps") is not None:
+            params["steps"] = style_overrides.get("steps")
+        elif request.app.state.config.IMAGE_STEPS is not None:
             params["steps"] = request.app.state.config.IMAGE_STEPS
+        # Additional style params if present
+        if style_overrides.get("cfg_scale") is not None:
+            params["cfg_scale"] = style_overrides.get("cfg_scale")
+        if style_overrides.get("sampler_name") is not None:
+            params["sampler_name"] = style_overrides.get("sampler_name")
+        if style_overrides.get("karras") is not None:
+            params["karras"] = style_overrides.get("karras")
+        if style_overrides.get("loras") is not None:
+            params["loras"] = style_overrides.get("loras")
         data = {
             "prompt": form_data.prompt,
             **({"negative_prompt": form_data.negative_prompt} if getattr(form_data, "negative_prompt", None) else {}),
@@ -96,6 +142,13 @@ async def generate_images_grid(
             "trusted_workers": False,
             "slow_workers": True,
         }
+
+        # Style model override if no explicit model selected
+        if not model_name and style_overrides.get("model"):
+            try:
+                data["models"] = [str(style_overrides.get("model"))]
+            except Exception:
+                pass
 
         # If no model specified, pick the first available image model from AIPG
         if not model_name:
@@ -755,12 +808,33 @@ def get_models(request: Request, user=Depends(get_verified_user)):
         raise HTTPException(status_code=400, detail=ERROR_MESSAGES.DEFAULT(e))
 
 
+@router.get("/styles")
+def get_styles(request: Request, user=Depends(get_verified_user)):
+    """Return available image styles from styles/styles.json as a simple list.
+    Each item: { id, name } where id=name=style key.
+    """
+    try:
+        styles_path = (Path(__file__).resolve().parents[3] / "styles" / "styles.json")
+        if not styles_path.exists():
+            return []
+        with styles_path.open("r", encoding="utf-8") as f:
+            styles = json.load(f)
+        if isinstance(styles, dict):
+            return [{"id": k, "name": k} for k in styles.keys()]
+        return []
+    except Exception as e:
+        # Non-fatal; return empty list on error
+        log.debug(f"Failed to read styles.json: {e}")
+        return []
+
+
 class GenerateImageForm(BaseModel):
     model: Optional[str] = None
     prompt: str
     size: Optional[str] = None
     n: int = 1
     negative_prompt: Optional[str] = None
+    style: Optional[str] = None
 
 
 def load_b64_image_data(b64_str):
@@ -864,11 +938,7 @@ async def image_generations(
                 ),
                 "prompt": form_data.prompt,
                 "n": form_data.n,
-                "size": (
-                    form_data.size
-                    if form_data.size
-                    else request.app.state.config.IMAGE_SIZE
-                ),
+                "size": f"{width}x{height}",
                 **(
                     {}
                     if "gpt-image-1" in request.app.state.config.IMAGE_GENERATION_MODEL
@@ -1009,16 +1079,25 @@ async def image_generations(
                 "height": height,
             }
 
-            if request.app.state.config.IMAGE_STEPS is not None:
+            # Steps: prefer style override, else global config
+            if style_overrides.get("steps") is not None:
+                data["steps"] = style_overrides.get("steps")
+            elif request.app.state.config.IMAGE_STEPS is not None:
                 data["steps"] = request.app.state.config.IMAGE_STEPS
 
             if form_data.negative_prompt is not None:
                 data["negative_prompt"] = form_data.negative_prompt
 
-            if request.app.state.config.AUTOMATIC1111_CFG_SCALE:
+            # cfg_scale: prefer style override
+            if style_overrides.get("cfg_scale") is not None:
+                data["cfg_scale"] = style_overrides.get("cfg_scale")
+            elif request.app.state.config.AUTOMATIC1111_CFG_SCALE:
                 data["cfg_scale"] = request.app.state.config.AUTOMATIC1111_CFG_SCALE
 
-            if request.app.state.config.AUTOMATIC1111_SAMPLER:
+            # sampler_name: prefer style override
+            if style_overrides.get("sampler_name") is not None:
+                data["sampler_name"] = style_overrides.get("sampler_name")
+            elif request.app.state.config.AUTOMATIC1111_SAMPLER:
                 data["sampler_name"] = request.app.state.config.AUTOMATIC1111_SAMPLER
 
             if request.app.state.config.AUTOMATIC1111_SCHEDULER:

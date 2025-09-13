@@ -83,21 +83,6 @@ async def generate_images_grid(
 
     width, height = tuple(map(int, size.split("x")))
 
-    # Optional: load style overrides
-    style_overrides = {}
-    try:
-        if getattr(form_data, "style", None):
-            styles_path = (Path(__file__).resolve().parents[3] / "styles" / "styles.json")
-            if styles_path.exists():
-                with styles_path.open("r", encoding="utf-8") as f:
-                    styles = json.load(f)
-                style_overrides = styles.get(form_data.style, {}) or {}
-                if style_overrides.get("width") and style_overrides.get("height"):
-                    width = int(style_overrides["width"])
-                    height = int(style_overrides["height"])
-    except Exception:
-        style_overrides = {}
-
     last_http_response = None
     try:
         AIPG_API_KEY = os.getenv("AIPG_API_KEY", "")
@@ -1077,6 +1062,22 @@ async def image_generations(
         ):
             if form_data.model:
                 set_image_model(request, form_data.model)
+
+            # Load style overrides for Automatic1111
+            style_overrides = {}
+            try:
+                if getattr(form_data, "style", None):
+                    styles_path = (Path(__file__).resolve().parents[3] / "styles" / "styles.json")
+                    if styles_path.exists():
+                        with styles_path.open("r", encoding="utf-8") as f:
+                            styles = json.load(f)
+                        style_overrides = styles.get(form_data.style, {}) or {}
+                        # Apply style size overrides if present
+                        if style_overrides.get("width") and style_overrides.get("height"):
+                            width = int(style_overrides["width"])
+                            height = int(style_overrides["height"])
+            except Exception:
+                style_overrides = {}
 
             data = {
                 "prompt": form_data.prompt,

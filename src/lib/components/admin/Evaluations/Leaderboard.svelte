@@ -521,7 +521,7 @@
 							<div class="flex items-center gap-2">
 								<div class="shrink-0">
 									<img
-										src={model?.info?.meta?.profile_image_url ?? `${WEBUI_BASE_URL}/favicon.png`}
+										src={model?.info?.meta?.profile_image_url ?? `/favicon.png`}
 										alt={model.name}
 										class="size-5 rounded-full object-cover shrink-0"
 									/>

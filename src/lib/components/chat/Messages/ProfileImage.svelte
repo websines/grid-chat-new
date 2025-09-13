@@ -2,14 +2,14 @@
 	import { WEBUI_BASE_URL } from '$lib/constants';
 
 	export let className = 'size-8';
-	export let src = `${WEBUI_BASE_URL}/static/favicon.png`;
+export let src = `/static/favicon.png`;
 </script>
 
 <img
 	crossorigin="anonymous"
 	aria-hidden="true"
 	src={src === ''
-		? `${WEBUI_BASE_URL}/static/favicon.png`
+		? `/static/favicon.png`
 		: src.startsWith(WEBUI_BASE_URL) ||
 			  src.startsWith('https://www.gravatar.com/avatar/') ||
 			  src.startsWith('data:') ||

@@ -536,7 +536,7 @@
 						<div class=" self-center flex items-center justify-center size-9">
 							<img
 								crossorigin="anonymous"
-								src="{WEBUI_BASE_URL}/static/favicon.png"
+								src="/static/favicon.png"
 								class="sidebar-new-chat-icon size-6 rounded-full group-hover:hidden"
 								alt=""
 							/>
@@ -714,15 +714,16 @@
 				>
 					<img
 						crossorigin="anonymous"
-						src="{WEBUI_BASE_URL}/static/favicon.png"
+						src="/static/favicon.png"
 						class="sidebar-new-chat-icon size-6 rounded-full"
 						alt=""
 					/>
 				</a>
 
 				<a href="/" class="flex flex-1 px-1.5" on:click={newChatHandler}>
-					<div class=" self-center font-medium text-gray-850 dark:text-white font-primary">
-						{$WEBUI_NAME}
+					<div class=" self-center font-medium text-gray-850 dark:text-white font-primary flex items-center gap-1">
+						<span>{$WEBUI_NAME}</span>
+						<span class="text-xs text-gray-500 dark:text-gray-400 font-normal whitespace-nowrap">by AIPowerGrid</span>
 					</div>
 				</a>
 				<Tooltip

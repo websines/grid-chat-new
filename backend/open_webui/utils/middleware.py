@@ -573,11 +573,38 @@ async def chat_image_generation_handler(
     system_message_content = ""
 
     try:
-        images = await image_generations(
-            request=request,
-            form_data=GenerateImageForm(**{"prompt": prompt}),
-            user=user,
-        )
+        # If Grid engine, use progress-aware helper and stream queue updates
+        from open_webui.routers.images import generate_images_grid, GenerateImageForm as _GenForm
+
+        async def progress_cb(status: dict):
+            try:
+                await __event_emitter__(status)
+            except Exception:
+                pass
+
+        if request.app.state.config.IMAGE_GENERATION_ENGINE == "grid":
+            model_hint = form_data.get("image_model")
+            try:
+                log.info(f"Image generation (Grid): model_hint={model_hint}")
+            except Exception:
+                pass
+            images = await generate_images_grid(
+                request=request,
+                form_data=_GenForm(**{"prompt": prompt, **({"model": model_hint} if model_hint else {})}),
+                user=user,
+                progress_cb=progress_cb,
+            )
+        else:
+            model_hint = form_data.get("image_model")
+            try:
+                log.info(f"Image generation (Non-Grid): model_hint={model_hint}")
+            except Exception:
+                pass
+            images = await image_generations(
+                request=request,
+                form_data=GenerateImageForm(**{"prompt": prompt, **({"model": model_hint} if model_hint else {})}),
+                user=user,
+            )
 
         await __event_emitter__(
             {
@@ -593,7 +620,8 @@ async def chat_image_generation_handler(
                     "files": [
                         {
                             "type": "image",
-                            "url": image["url"],
+                            "url": image.get("url"),
+                            **({"meta": image.get("meta")} if isinstance(image, dict) and image.get("meta") else {}),
                         }
                         for image in images
                     ]

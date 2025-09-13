@@ -17,7 +17,7 @@
 
 	import { config, models, settings, temporaryChatEnabled, TTSWorker, user } from '$lib/stores';
 	import { synthesizeOpenAISpeech } from '$lib/apis/audio';
-	import { imageGenerations } from '$lib/apis/images';
+	import { imageGenerations, getImageGenerationModels } from '$lib/apis/images';
 	import {
 		copyToClipboard as _copyToClipboard,
 		approximateToHumanReadable,
@@ -162,6 +162,37 @@
 
 	let loadingSpeech = false;
 	let generatingImage = false;
+	let imageModels: { id: string; name: string }[] = [];
+	let selectedImageModel: string = '';
+
+	// Persist per-message image model selection so composer/chat can reuse it
+	$: (() => {
+		try {
+			if (selectedImageModel) {
+				localStorage.setItem('owui_image_model_id', selectedImageModel);
+			}
+		} catch (_) {
+			// ignore storage errors
+		}
+	})();
+
+onMount(async () => {
+    try {
+        imageModels = (await getImageGenerationModels(localStorage.token)) ?? [];
+        // Only set a default if none selected or selection no longer exists
+        if (!selectedImageModel || !imageModels.some((m) => m.id === selectedImageModel)) {
+            // Prefer the composer selection persisted in localStorage if valid
+            const savedModel = localStorage.getItem('owui_image_model_id') || '';
+            if (savedModel && imageModels.some((m) => m.id === savedModel)) {
+                selectedImageModel = savedModel;
+            } else {
+                selectedImageModel = imageModels?.[0]?.id ?? '';
+            }
+        }
+    } catch (e) {
+        console.debug('image models fetch error', e);
+    }
+});
 
 	let showRateComment = false;
 
@@ -421,7 +452,16 @@
 
 	const generateImage = async (message: MessageType) => {
 		generatingImage = true;
-		const res = await imageGenerations(localStorage.token, message.content).catch((error) => {
+		// Prefer per-message selection; fallback to composer selection persisted in localStorage
+		const persistedModel = (() => {
+			try {
+				return localStorage.getItem('owui_image_model_id') || '';
+			} catch (_) {
+				return '';
+			}
+		})();
+		const modelToUse = selectedImageModel || persistedModel || undefined;
+		const res = await imageGenerations(localStorage.token, message.content, modelToUse).catch((error) => {
 			toast.error(`${error}`);
 		});
 		console.log(res);
@@ -1131,6 +1171,28 @@
 											{/if}
 										</button>
 									</Tooltip>
+									{#if imageModels && imageModels.length > 0}
+										<select
+											bind:value={selectedImageModel}
+											class="ml-1 text-[10px] px-1 py-0.5 rounded bg-transparent border border-gray-100 dark:border-gray-800 text-gray-600 dark:text-gray-300"
+											aria-label={$i18n.t('Select image model')}
+										>
+											{#each imageModels as m}
+												<option value={m.id}>{m.name}</option>
+											{/each}
+										</select>
+									{/if}
+
+									<!-- Show Grid queue wait time if available on attached images -->
+									{#if (history?.messages?.[message.id]?.files ?? []).some((f) => f?.type === 'image' && f?.meta?.wait_time)}
+										<Tooltip content={$i18n.t('Estimated queue wait time (latest)')} placement="bottom">
+											<div class="ml-1 text-[10px] px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/5 text-gray-700 dark:text-gray-300">
+												{#each history.messages[message.id].files.filter((f) => f?.type === 'image' && f?.meta?.wait_time).slice(-1) as f}
+													<span>Queue: {Math.round(f.meta.wait_time)}s</span>
+												{/each}
+											</div>
+										</Tooltip>
+									{/if}
 								{/if}
 
 								{#if message.usage}

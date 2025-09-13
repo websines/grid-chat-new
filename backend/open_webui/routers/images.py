@@ -3,9 +3,11 @@ import base64
 import io
 import json
 import logging
+import time
 import mimetypes
 import re
 from pathlib import Path
+import os
 from typing import Optional
 
 from urllib.parse import quote
@@ -38,6 +40,281 @@ IMAGE_CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 
 router = APIRouter()
+
+
+async def generate_images_grid(
+    request: Request,
+    form_data,
+    user,
+    progress_cb=None,
+):
+    """Helper to generate images via AIPowerGrid with optional progress callback.
+    progress_cb: async callable(dict) — will be awaited with status dicts.
+    """
+    size = "512x512"
+    if request.app.state.config.IMAGE_SIZE and "x" in request.app.state.config.IMAGE_SIZE:
+        size = request.app.state.config.IMAGE_SIZE
+    if getattr(form_data, "size", None) and "x" in form_data.size:
+        size = form_data.size
+    width, height = tuple(map(int, size.split("x")))
+
+    last_http_response = None
+    try:
+        AIPG_API_KEY = os.getenv("AIPG_API_KEY", "")
+        if not AIPG_API_KEY:
+            raise HTTPException(status_code=401, detail="AIPG_API_KEY is not set in environment")
+
+        GRID_BASE_URL = "https://api.aipowergrid.io"
+        ENV_GEN = os.getenv("AIPG_IMAGE_GENERATE_ENDPOINT", "").strip()
+        ENV_STATUS = os.getenv("AIPG_IMAGE_STATUS_ENDPOINT", "").strip()
+        candidates = []
+        if ENV_GEN and ENV_STATUS:
+            candidates.append((ENV_GEN, ENV_STATUS))
+        candidates += [
+            (f"{GRID_BASE_URL}/api/v2/generate/async", f"{GRID_BASE_URL}/api/v2/generate/status"),
+            (f"{GRID_BASE_URL}/v2/generate/async", f"{GRID_BASE_URL}/v2/generate/status"),
+            (f"{GRID_BASE_URL}/api/v2/generate/image/async", f"{GRID_BASE_URL}/api/v2/generate/image/status"),
+            (f"{GRID_BASE_URL}/api/v2/generate/images/async", f"{GRID_BASE_URL}/api/v2/generate/images/status"),
+            (f"{GRID_BASE_URL}/api/v2/images/generate/async", f"{GRID_BASE_URL}/api/v2/images/generate/status"),
+            (f"{GRID_BASE_URL}/api/v2/generate/img/async", f"{GRID_BASE_URL}/api/v2/generate/img/status"),
+            (f"{GRID_BASE_URL}/v2/generate/image/async", f"{GRID_BASE_URL}/v2/generate/image/status"),
+            (f"{GRID_BASE_URL}/v2/generate/images/async", f"{GRID_BASE_URL}/v2/generate/images/status"),
+            (f"{GRID_BASE_URL}/v2/images/generate/async", f"{GRID_BASE_URL}/v2/images/generate/status"),
+            (f"{GRID_BASE_URL}/v2/generate/img/async", f"{GRID_BASE_URL}/v2/generate/img/status"),
+        ]
+
+        headers = {"apikey": AIPG_API_KEY, "Content-Type": "application/json"}
+        model_name = (form_data.model or "").replace("grid_", "") if getattr(form_data, "model", None) else None
+        params = {"width": width, "height": height}
+        if request.app.state.config.IMAGE_STEPS is not None:
+            params["steps"] = request.app.state.config.IMAGE_STEPS
+        data = {
+            "prompt": form_data.prompt,
+            **({"negative_prompt": form_data.negative_prompt} if getattr(form_data, "negative_prompt", None) else {}),
+            "params": params,
+            **({"models": [model_name]} if model_name else {}),
+            "trusted_workers": False,
+            "slow_workers": True,
+        }
+
+        # If no model specified, pick the first available image model from AIPG
+        if not model_name:
+            try:
+                models_res = requests.get(
+                    f"{GRID_BASE_URL}/api/v2/status/models?type=image&model_state=all",
+                    headers={
+                        "apikey": AIPG_API_KEY,
+                        "accept": "application/json",
+                        "Client-Agent": "openwebui:0:unknown",
+                    },
+                    timeout=30,
+                )
+                if models_res.status_code == 200:
+                    arr = models_res.json() if isinstance(models_res.json(), list) else []
+                    first = next((m for m in arr if m.get("name")), None)
+                    if first and first.get("name"):
+                        model_name = first["name"]
+                        data["models"] = [model_name]
+                        log.info(f"AIPG: no model specified; using first available '{model_name}'")
+            except Exception:
+                pass
+
+        # Submit
+        submit_res = None
+        used_status_endpoint = None
+        submit_error = None
+        for GEN_URL, STATUS_URL in candidates:
+            try:
+                # Log the submit attempt (without API key)
+                prompt_preview = (form_data.prompt[:120] + "...") if len(form_data.prompt) > 120 else form_data.prompt
+                log.info(
+                    f"AIPG submit -> url={GEN_URL} model={model_name or 'default'} size={width}x{height} steps={params.get('steps')} prompt='{prompt_preview}'"
+                )
+            except Exception:
+                pass
+            r = await asyncio.to_thread(
+                requests.post,
+                url=GEN_URL,
+                json=data,
+                headers=headers,
+                timeout=60,
+            )
+            last_http_response = r
+            try:
+                body_preview = r.text[:500]
+                log.info(f"AIPG submit <- status={r.status_code} body='{body_preview}'")
+            except Exception:
+                log.info(f"AIPG submit <- status={r.status_code} (no body preview)")
+            if r.status_code in (200, 202):
+                try:
+                    submit_res = r.json()
+                    used_status_endpoint = STATUS_URL
+                    log.info(f"AIPG status base set -> {used_status_endpoint}")
+                    break
+                except Exception:
+                    submit_error = r.text
+                    continue
+            elif r.status_code == 404:
+                submit_error = r.text
+                continue
+            else:
+                try:
+                    submit_error = r.json()
+                except Exception:
+                    submit_error = r.text
+                continue
+        if not submit_res:
+            raise HTTPException(status_code=500, detail=f"Grid image submit failed: {submit_error}")
+
+        request_id = submit_res.get("id")
+        if not request_id:
+            raise HTTPException(status_code=500, detail="No Grid image request id")
+
+        # Poll
+        start_ts = time.time()
+        max_attempts = 120
+        attempt = 0
+        images = []
+        sleep_s = 2.0
+        submit_wait_hint = submit_res.get("wait_time") or submit_res.get("wait") or submit_res.get("eta")
+        if isinstance(submit_wait_hint, (int, float)):
+            sleep_s = max(1.0, min(float(submit_wait_hint), 15.0))
+        last_wait = None
+
+        while attempt < max_attempts:
+            # Progress callback
+            if progress_cb and (last_wait is not None or submit_wait_hint is not None):
+                try:
+                    await progress_cb(
+                        {
+                            "type": "status",
+                            "data": {
+                                "description": f"In queue ~{int((last_wait or submit_wait_hint) or sleep_s)}s",
+                                "done": False,
+                                "wait_time": (last_wait or submit_wait_hint),
+                            },
+                        }
+                    )
+                except Exception:
+                    pass
+
+            await asyncio.sleep(sleep_s)
+            attempt += 1
+            status_url = f"{used_status_endpoint}/{request_id}"
+            s = await asyncio.to_thread(
+                requests.get,
+                url=status_url,
+                headers=headers,
+                timeout=60,
+            )
+            last_http_response = s
+            try:
+                log.debug(f"AIPG poll -> {status_url}")
+                log.debug(f"AIPG poll <- status={s.status_code} body='{s.text[:400]}'")
+            except Exception:
+                pass
+            if s.status_code == 429:
+                retry_after = 0
+                try:
+                    retry_after = int(s.headers.get("Retry-After", "0"))
+                except Exception:
+                    retry_after = 0
+                sleep_s = max(sleep_s * 2.0, float(retry_after) if retry_after > 0 else 5.0)
+                sleep_s = min(sleep_s, 20.0)
+                continue
+            if s.status_code == 404:
+                raise HTTPException(status_code=500, detail="Grid image request not found")
+            s.raise_for_status()
+            status_data = s.json()
+            wt = status_data.get("wait_time") or status_data.get("wait") or status_data.get("eta")
+            if isinstance(wt, (int, float)):
+                last_wait = float(wt)
+                sleep_s = max(1.0, min(float(wt), 15.0))
+
+            if status_data.get("done"):
+                gens = status_data.get("generations", []) or status_data.get("images", [])
+                log.info(f"AIPG done: generations={len(gens)}")
+                for gen in gens:
+                    img_data = None
+                    content_type = None
+                    if isinstance(gen, dict):
+                        # Common fields across providers
+                        if gen.get("url"):
+                            img_data, content_type = load_url_image_data(gen["url"])  # may be public
+                        elif gen.get("img"):
+                            # AIPG returns 'img' for a direct URL in some responses
+                            img_data, content_type = load_url_image_data(gen["img"])  # may be public
+                        elif gen.get("image"):
+                            img_data, content_type = load_b64_image_data(gen["image"])
+                        elif gen.get("b64_json"):
+                            img_data, content_type = load_b64_image_data(gen["b64_json"])
+                        elif gen.get("data"):
+                            img_data, content_type = load_b64_image_data(gen["data"])
+                    elif isinstance(gen, str):
+                        img_data, content_type = load_b64_image_data(gen)
+                    if img_data and content_type:
+                        url = upload_image(
+                            request,
+                            img_data,
+                            content_type,
+                            {
+                                "provider": "grid",
+                                "job_id": request_id,
+                                "width": width,
+                                "height": height,
+                                **({"wait_time": last_wait} if last_wait is not None else {}),
+                                **({"submit_wait": submit_wait_hint} if submit_wait_hint is not None else {}),
+                            },
+                            user,
+                        )
+                        images.append(
+                            {
+                                "url": url,
+                                "meta": {
+                                    "provider": "grid",
+                                    "job_id": request_id,
+                                    **({"wait_time": last_wait} if last_wait is not None else {}),
+                                    **({"submit_wait": submit_wait_hint} if submit_wait_hint is not None else {}),
+                                },
+                            }
+                        )
+                if images:
+                    log.info(f"AIPG saved images: {len(images)}")
+                    return images
+                # done but no decodable images; log keys to aid debugging
+                try:
+                    sample = gens[0] if gens else {}
+                    log.error(f"AIPG done but no images decoded; sample keys={list(sample.keys()) if isinstance(sample, dict) else type(sample)}")
+                except Exception:
+                    pass
+                break
+            if status_data.get("faulted"):
+                log.error(f"AIPG faulted: {status_data}")
+                raise HTTPException(status_code=500, detail="Grid image generation failed")
+
+        raise HTTPException(status_code=408, detail="Grid image generation timeout")
+    except HTTPException:
+        raise
+    except Exception as e:
+        detail_msg = str(e)
+        if last_http_response is not None:
+            try:
+                data = last_http_response.json()
+                if isinstance(data, dict):
+                    if "error" in data:
+                        err_val = data["error"]
+                        if isinstance(err_val, dict):
+                            detail_msg = err_val.get("message", detail_msg)
+                        else:
+                            detail_msg = str(err_val)
+                else:
+                    detail_msg = str(data)
+            except Exception:
+                try:
+                    detail_msg = last_http_response.text
+                except Exception:
+                    pass
+        raise HTTPException(status_code=400, detail=ERROR_MESSAGES.DEFAULT(detail_msg))
 
 
 @router.get("/config")
@@ -410,6 +687,54 @@ def get_models(request: Request, user=Depends(get_verified_user)):
                         ][0],
                     )
                 )
+        elif request.app.state.config.IMAGE_GENERATION_ENGINE == "grid":
+            # Fetch image models from AIPowerGrid (best-effort)
+            try:
+                AIPG_API_KEY = os.getenv("AIPG_API_KEY", "")
+                if not AIPG_API_KEY:
+                    raise Exception("AIPG_API_KEY not set")
+
+                GRID_BASE_URL = "https://api.aipowergrid.io"
+                # Prefer canonical endpoint with model_state=all
+                model_endpoints = [
+                    f"{GRID_BASE_URL}/api/v2/status/models?type=image&model_state=all",
+                    f"{GRID_BASE_URL}/v2/status/models?type=image&model_state=all",
+                    f"{GRID_BASE_URL}/api/v2/status/models?type=image",
+                    f"{GRID_BASE_URL}/v2/status/models?type=image",
+                ]
+                data = []
+                for me in model_endpoints:
+                    try:
+                        r = requests.get(
+                            me,
+                            headers={
+                                "apikey": AIPG_API_KEY,
+                                "accept": "application/json",
+                                "Client-Agent": "openwebui:0:unknown",
+                            },
+                            timeout=30,
+                        )
+                        if r.status_code == 200:
+                            jr = r.json()
+                            if isinstance(jr, list):
+                                data = jr
+                                break
+                    except Exception:
+                        continue
+                models = []
+                for m in data:
+                    # Expect keys like name, type='image'
+                    name = m.get("name") or m.get("model") or None
+                    if not name:
+                        continue
+                    models.append({"id": f"grid_{name}", "name": name})
+                if models:
+                    return models
+                # Fallback if API returned empty
+                return [{"id": "grid_default", "name": "Grid Default"}]
+            except Exception as e:
+                log.debug(f"AIPG image models fetch failed: {e}")
+                return [{"id": "grid_default", "name": "Grid Default"}]
         elif (
             request.app.state.config.IMAGE_GENERATION_ENGINE == "automatic1111"
             or request.app.state.config.IMAGE_GENERATION_ENGINE == ""
@@ -516,6 +841,7 @@ async def image_generations(
     width, height = tuple(map(int, size.split("x")))
 
     r = None
+    last_http_response = None
     try:
         if request.app.state.config.IMAGE_GENERATION_ENGINE == "openai":
             headers = {}
@@ -563,6 +889,7 @@ async def image_generations(
                 json=data,
                 headers=headers,
             )
+            last_http_response = r
 
             r.raise_for_status()
             res = r.json()
@@ -600,6 +927,7 @@ async def image_generations(
                 json=data,
                 headers=headers,
             )
+            last_http_response = r
 
             r.raise_for_status()
             res = r.json()
@@ -703,6 +1031,7 @@ async def image_generations(
                 json=data,
                 headers={"authorization": get_automatic1111_api_auth(request)},
             )
+            last_http_response = r
 
             res = r.json()
             log.debug(f"res: {res}")
@@ -720,10 +1049,26 @@ async def image_generations(
                 )
                 images.append({"url": url})
             return images
+        elif request.app.state.config.IMAGE_GENERATION_ENGINE == "grid":
+            # Delegate to helper to allow progress callbacks and reuse logic
+            return await generate_images_grid(request, form_data, user)
     except Exception as e:
-        error = e
-        if r != None:
-            data = r.json()
-            if "error" in data:
-                error = data["error"]["message"]
-        raise HTTPException(status_code=400, detail=ERROR_MESSAGES.DEFAULT(error))
+        detail_msg = str(e)
+        if last_http_response is not None:
+            try:
+                data = last_http_response.json()
+                if isinstance(data, dict):
+                    if "error" in data:
+                        err_val = data["error"]
+                        if isinstance(err_val, dict):
+                            detail_msg = err_val.get("message", detail_msg)
+                        else:
+                            detail_msg = str(err_val)
+                else:
+                    detail_msg = str(data)
+            except Exception:
+                try:
+                    detail_msg = last_http_response.text
+                except Exception:
+                    pass
+        raise HTTPException(status_code=400, detail=ERROR_MESSAGES.DEFAULT(detail_msg))

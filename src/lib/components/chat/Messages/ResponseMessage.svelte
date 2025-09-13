@@ -1153,6 +1153,17 @@
 											{/each}
 										</select>
 									{/if}
+
+									<!-- Show Grid queue wait time if available on attached images -->
+									{#if (history?.messages?.[message.id]?.files ?? []).some((f) => f?.type === 'image' && f?.meta?.wait_time)}
+										<Tooltip content={$i18n.t('Estimated queue wait time (latest)')} placement="bottom">
+											<div class="ml-1 text-[10px] px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/5 text-gray-700 dark:text-gray-300">
+												{#each history.messages[message.id].files.filter((f) => f?.type === 'image' && f?.meta?.wait_time).slice(-1) as f}
+													<span>Queue: {Math.round(f.meta.wait_time)}s</span>
+												{/each}
+											</div>
+										</Tooltip>
+									{/if}
 								{/if}
 
 								{#if message.usage}

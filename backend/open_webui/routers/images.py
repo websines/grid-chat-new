@@ -97,6 +97,28 @@ async def generate_images_grid(
             "slow_workers": True,
         }
 
+        # If no model specified, pick the first available image model from AIPG
+        if not model_name:
+            try:
+                models_res = requests.get(
+                    f"{GRID_BASE_URL}/api/v2/status/models?type=image&model_state=all",
+                    headers={
+                        "apikey": AIPG_API_KEY,
+                        "accept": "application/json",
+                        "Client-Agent": "openwebui:0:unknown",
+                    },
+                    timeout=30,
+                )
+                if models_res.status_code == 200:
+                    arr = models_res.json() if isinstance(models_res.json(), list) else []
+                    first = next((m for m in arr if m.get("name")), None)
+                    if first and first.get("name"):
+                        model_name = first["name"]
+                        data["models"] = [model_name]
+                        log.info(f"AIPG: no model specified; using first available '{model_name}'")
+            except Exception:
+                pass
+
         # Submit
         submit_res = None
         used_status_endpoint = None
@@ -216,8 +238,12 @@ async def generate_images_grid(
                     img_data = None
                     content_type = None
                     if isinstance(gen, dict):
+                        # Common fields across providers
                         if gen.get("url"):
                             img_data, content_type = load_url_image_data(gen["url"])  # may be public
+                        elif gen.get("img"):
+                            # AIPG returns 'img' for a direct URL in some responses
+                            img_data, content_type = load_url_image_data(gen["img"])  # may be public
                         elif gen.get("image"):
                             img_data, content_type = load_b64_image_data(gen["image"])
                         elif gen.get("b64_json"):
@@ -255,6 +281,12 @@ async def generate_images_grid(
                 if images:
                     log.info(f"AIPG saved images: {len(images)}")
                     return images
+                # done but no decodable images; log keys to aid debugging
+                try:
+                    sample = gens[0] if gens else {}
+                    log.error(f"AIPG done but no images decoded; sample keys={list(sample.keys()) if isinstance(sample, dict) else type(sample)}")
+                except Exception:
+                    pass
                 break
             if status_data.get("faulted"):
                 log.error(f"AIPG faulted: {status_data}")
@@ -663,17 +695,25 @@ def get_models(request: Request, user=Depends(get_verified_user)):
                     raise Exception("AIPG_API_KEY not set")
 
                 GRID_BASE_URL = "https://api.aipowergrid.io"
-                # Try common variants for models endpoint
+                # Prefer canonical endpoint with model_state=all
                 model_endpoints = [
-                    f"{GRID_BASE_URL}/v2/status/models?type=image",
+                    f"{GRID_BASE_URL}/api/v2/status/models?type=image&model_state=all",
+                    f"{GRID_BASE_URL}/v2/status/models?type=image&model_state=all",
                     f"{GRID_BASE_URL}/api/v2/status/models?type=image",
-                    f"{GRID_BASE_URL}/v2/status/models?type=text",
-                    f"{GRID_BASE_URL}/api/v2/status/models?type=text",
+                    f"{GRID_BASE_URL}/v2/status/models?type=image",
                 ]
                 data = []
                 for me in model_endpoints:
                     try:
-                        r = requests.get(me, headers={"apikey": AIPG_API_KEY}, timeout=30)
+                        r = requests.get(
+                            me,
+                            headers={
+                                "apikey": AIPG_API_KEY,
+                                "accept": "application/json",
+                                "Client-Agent": "openwebui:0:unknown",
+                            },
+                            timeout=30,
+                        )
                         if r.status_code == 200:
                             jr = r.json()
                             if isinstance(jr, list):

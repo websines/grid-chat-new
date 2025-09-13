@@ -98,8 +98,8 @@
 	export let selectedFilterIds = [];
 
 	export let imageGenerationEnabled = false;
-	let imageModels: { id: string; name: string }[] = [];
-	let selectedImageModelComposer: string = '';
+let imageModels: { id: string; name: string }[] = [];
+export let selectedImageModelComposer: string = '';
 
 	onMount(async () => {
 		try {

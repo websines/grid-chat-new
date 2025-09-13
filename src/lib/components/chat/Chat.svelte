@@ -122,7 +122,8 @@
 
 	let selectedToolIds = [];
 	let selectedFilterIds = [];
-	let imageGenerationEnabled = false;
+let imageGenerationEnabled = false;
+let selectedImageModelComposer = '';
 	let webSearchEnabled = false;
 	let codeInterpreterEnabled = false;
 
@@ -1649,6 +1650,10 @@
 					($user?.role === 'admin' || $user?.permissions?.features?.image_generation)
 						? imageGenerationEnabled
 						: false,
+				// Include image model hint for backend when image generation is enabled
+				...(imageGenerationEnabled && selectedImageModelComposer
+					? { image_model: selectedImageModelComposer }
+					: {}),
 				code_interpreter:
 					$config?.features?.enable_code_interpreter &&
 					($user?.role === 'admin' || $user?.permissions?.features?.code_interpreter)
@@ -1792,6 +1797,10 @@
 				tool_ids: selectedToolIds.length > 0 ? selectedToolIds : undefined,
 				tool_servers: $toolServers,
 				features: getFeatures(),
+				// Also send image_model at top-level to ensure backend has it even after features are popped
+				...(imageGenerationEnabled && selectedImageModelComposer
+					? { image_model: selectedImageModelComposer }
+					: {}),
 				variables: {
 					...getPromptVariables($user?.name, $settings?.userLocation ? userLocation : undefined)
 				},
@@ -2350,6 +2359,7 @@
 									bind:selectedToolIds
 									bind:selectedFilterIds
 									bind:imageGenerationEnabled
+									bind:selectedImageModelComposer
 									bind:codeInterpreterEnabled
 									bind:webSearchEnabled
 									bind:atSelectedModel

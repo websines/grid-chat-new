@@ -583,16 +583,18 @@ async def chat_image_generation_handler(
                 pass
 
         if request.app.state.config.IMAGE_GENERATION_ENGINE == "grid":
+            model_hint = form_data.get("image_model")
             images = await generate_images_grid(
                 request=request,
-                form_data=_GenForm(**{"prompt": prompt}),
+                form_data=_GenForm(**{"prompt": prompt, **({"model": model_hint} if model_hint else {})}),
                 user=user,
                 progress_cb=progress_cb,
             )
         else:
+            model_hint = form_data.get("image_model")
             images = await image_generations(
                 request=request,
-                form_data=GenerateImageForm(**{"prompt": prompt}),
+                form_data=GenerateImageForm(**{"prompt": prompt, **({"model": model_hint} if model_hint else {})}),
                 user=user,
             )
 

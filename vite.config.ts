@@ -30,6 +30,6 @@ export default defineConfig({
 		pure: process.env.ENV === 'dev' ? [] : ['console.log', 'console.debug', 'console.error']
 	},
 	server: {
-		allowedHosts: ['openwebui.subh-dev.xyz']
+		allowedHosts: ['aipg.art']
 	}
 });

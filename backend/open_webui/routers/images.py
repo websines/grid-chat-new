@@ -109,7 +109,11 @@ async def generate_images_grid(
         ]
 
         headers = {"apikey": AIPG_API_KEY, "Content-Type": "application/json"}
+
+        # Determine model name with priority: form_data.model > style model > fallback
         model_name = (form_data.model or "").replace("grid_", "") if getattr(form_data, "model", None) else None
+        if not model_name and style_overrides.get("model"):
+            model_name = str(style_overrides.get("model"))
         params = {"width": width, "height": height}
         # Steps: prefer style override, else global config
         if style_overrides.get("steps") is not None:
@@ -120,7 +124,23 @@ async def generate_images_grid(
         if style_overrides.get("cfg_scale") is not None:
             params["cfg_scale"] = style_overrides.get("cfg_scale")
         if style_overrides.get("sampler_name") is not None:
-            params["sampler_name"] = style_overrides.get("sampler_name")
+            # Map common sampler names to AIPG-compatible names
+            sampler_name = style_overrides.get("sampler_name")
+            sampler_mapping = {
+                "euler": "k_euler",
+                "euler_a": "k_euler_a",
+                "lms": "k_lms",
+                "heun": "k_heun",
+                "dpm": "k_dpm_2",
+                "dpm_2": "k_dpm_2",
+                "dpm_2_a": "k_dpm_2_a",
+                "dpmpp_2m": "k_dpmpp_2m",
+                "dpmpp_sde": "k_dpmpp_sde",
+                "dpm_adaptive": "k_dpm_adaptive",
+                "dpm_fast": "k_dpm_fast",
+                "ddim": "DDIM",
+            }
+            params["sampler_name"] = sampler_mapping.get(sampler_name, sampler_name)
         if style_overrides.get("karras") is not None:
             params["karras"] = style_overrides.get("karras")
         if style_overrides.get("loras") is not None:
@@ -134,13 +154,7 @@ async def generate_images_grid(
             "slow_workers": True,
         }
 
-        # Style model override if no explicit model selected
-        if not model_name and style_overrides.get("model"):
-            try:
-                data["models"] = [str(style_overrides.get("model"))]
-            except Exception:
-                pass
-
+  
         # If no model specified, pick the first available image model from AIPG
         if not model_name:
             try:
@@ -158,10 +172,13 @@ async def generate_images_grid(
                     first = next((m for m in arr if m.get("name")), None)
                     if first and first.get("name"):
                         model_name = first["name"]
-                        data["models"] = [model_name]
                         log.info(f"AIPG: no model specified; using first available '{model_name}'")
             except Exception:
                 pass
+
+        # Update data payload with final model selection
+        if model_name:
+            data["models"] = [model_name]
 
         # Submit
         submit_res = None

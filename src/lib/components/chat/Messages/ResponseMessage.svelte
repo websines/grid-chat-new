@@ -17,7 +17,7 @@
 
 	import { config, models, settings, temporaryChatEnabled, TTSWorker, user } from '$lib/stores';
 	import { synthesizeOpenAISpeech } from '$lib/apis/audio';
-	import { imageGenerations, getImageGenerationModels } from '$lib/apis/images';
+	import { imageGenerations } from '$lib/apis/images';
 	import {
 		copyToClipboard as _copyToClipboard,
 		approximateToHumanReadable,
@@ -163,17 +163,12 @@
 
 	let loadingSpeech = false;
 let generatingImage = false;
-let imageModels: { id: string; name: string }[] = [];
-let selectedImageModel: string = '';
 let imageStyles: { id: string; name: string }[] = [];
 let selectedImageStyle: string = '';
 
-// Persist per-message image model selection so composer/chat can reuse it
+// Persist per-message image style selection so composer/chat can reuse it
 $: (() => {
     try {
-        if (selectedImageModel) {
-            localStorage.setItem('owui_image_model_id', selectedImageModel);
-        }
         if (selectedImageStyle) {
             localStorage.setItem('owui_image_style_id', selectedImageStyle);
         }
@@ -184,17 +179,6 @@ $: (() => {
 
 onMount(async () => {
     try {
-        imageModels = (await getImageGenerationModels(localStorage.token)) ?? [];
-        // Only set a default if none selected or selection no longer exists
-        if (!selectedImageModel || !imageModels.some((m) => m.id === selectedImageModel)) {
-            // Prefer the composer selection persisted in localStorage if valid
-            const savedModel = localStorage.getItem('owui_image_model_id') || '';
-            if (savedModel && imageModels.some((m) => m.id === savedModel)) {
-                selectedImageModel = savedModel;
-            } else {
-                selectedImageModel = imageModels?.[0]?.id ?? '';
-            }
-        }
         // Fetch styles list from backend
         imageStyles = (await getImageStyles(localStorage.token)) ?? [];
         // Restore saved style selection if valid
@@ -207,7 +191,7 @@ onMount(async () => {
             }
         }
     } catch (e) {
-        console.debug('image models fetch error', e);
+        console.debug('image styles fetch error', e);
     }
 });
 
@@ -469,26 +453,17 @@ onMount(async () => {
 
 	const generateImage = async (message: MessageType) => {
 		generatingImage = true;
-		// Prefer per-message selection; fallback to composer selection persisted in localStorage
-		const persistedModel = (() => {
-			try {
-				return localStorage.getItem('owui_image_model_id') || '';
-			} catch (_) {
-				return '';
-			}
-		})();
-    const modelToUse = selectedImageModel || persistedModel || undefined;
-    const persistedStyle = (() => {
-        try {
-            return localStorage.getItem('owui_image_style_id') || '';
-        } catch (_) {
-            return '';
-        }
-    })();
-    const styleToUse = selectedImageStyle || persistedStyle || undefined;
-    const res = await imageGenerations(localStorage.token, message.content, modelToUse, undefined, styleToUse).catch((error) => {
-        toast.error(`${error}`);
-    });
+	    const persistedStyle = (() => {
+	        try {
+	            return localStorage.getItem('owui_image_style_id') || '';
+	        } catch (_) {
+	            return '';
+	        }
+	    })();
+	    const styleToUse = selectedImageStyle || persistedStyle || undefined;
+	    const res = await imageGenerations(localStorage.token, message.content, undefined, undefined, styleToUse).catch((error) => {
+	        toast.error(`${error}`);
+	    });
 		console.log(res);
 
 		if (res) {
@@ -1194,18 +1169,6 @@ onMount(async () => {
 											{/if}
 										</button>
 									</Tooltip>
-									{#if imageModels && imageModels.length > 0}
-										<select
-											bind:value={selectedImageModel}
-											class="ml-1 text-[10px] px-1 py-0.5 rounded bg-transparent border border-gray-100 dark:border-gray-800 text-gray-600 dark:text-gray-300"
-											aria-label={$i18n.t('Select image model')}
-										>
-											{#each imageModels as m}
-												<option value={m.id}>{m.name}</option>
-											{/each}
-										</select>
-									{/if}
-
 									{#if imageStyles && imageStyles.length > 0}
 										<select
 											bind:value={selectedImageStyle}

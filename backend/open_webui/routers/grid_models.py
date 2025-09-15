@@ -6,20 +6,109 @@ Provides dynamic model loading from AI Power Grid API
 import asyncio
 import json
 import logging
+import os
+import re
 import time
 from datetime import datetime
-from typing import List, Dict, Optional, Any
+from typing import Any, Dict, List, Optional
 from urllib.parse import quote
-import os
 
 import aiohttp
-from fastapi import APIRouter, HTTPException, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 from pydantic import BaseModel
 
 from open_webui.models.chats import ChatModel
 from open_webui.models.models import Model
 from open_webui.utils.auth import get_current_user
+
+
+def convert_thinking_tags_to_details(content: str) -> str:
+    """
+    Convert thinking tags to HTML details blocks so non-streaming responses
+    match Open WebUI's built-in handling for reasoning content.
+    """
+    if not content or not isinstance(content, str):
+        return content
+
+    reasoning_tags = [
+        ("<think>", "</think>"),
+        ("<thinking>", "</thinking>"),
+        ("<reason>", "</reason>"),
+        ("<reasoning>", "</reasoning>"),
+        ("<thought>", "</thought>"),
+        ("<Thought>", "</Thought>"),
+        ("<|begin_of_thought|>", "<|end_of_thought|>"),
+        ("◁think▷", "◁/think▷"),
+    ]
+
+    for start_tag, end_tag in reasoning_tags:
+        pattern = rf"{re.escape(start_tag)}(.*?){re.escape(end_tag)}"
+
+        def replace_thinking(match: re.Match) -> str:
+            thinking_content = match.group(1).strip()
+            if not thinking_content:
+                return ""
+
+            formatted_content = "\n".join(
+                f"> {line}" if line.strip() and not line.startswith(">") else line
+                for line in thinking_content.splitlines()
+            )
+
+            return (
+                '<details type="reasoning" done="true">\n'
+                '<summary>Thinking...</summary>\n'
+                f"{formatted_content}\n"
+                "</details>"
+            )
+
+        content = re.sub(pattern, replace_thinking, content, flags=re.DOTALL)
+
+    return content
+
+
+def filter_thinking_from_content(content: str) -> str:
+    """Remove thinking tags so conversation history stays concise."""
+    if not content or not isinstance(content, str):
+        return content
+
+    thinking_patterns = [
+        r"<think>.*?</think>",
+        r"<thinking>.*?</thinking>",
+        r"<reason>.*?</reason>",
+        r"<reasoning>.*?</reasoning>",
+        r"<thought>.*?</thought>",
+        r"<Thought>.*?</Thought>",
+        r"<\|begin_of_thought\|>.*?<\|end_of_thought\|>",
+        r"◁think▷.*?◁/think▷",
+    ]
+
+    for pattern in thinking_patterns:
+        content = re.sub(pattern, "", content, flags=re.DOTALL)
+
+    return content.strip()
+
+
+def sanitize_grid_model_name(model_name: str) -> str:
+    """Remove the provider namespace prefix from Grid model names for display."""
+    if not model_name or not isinstance(model_name, str):
+        return ""
+
+    normalized = model_name.strip()
+    if normalized.startswith("grid/"):
+        return normalized[len("grid/") :]
+    return normalized
+
+
+def normalize_model_identifier(model_identifier: str) -> str:
+    """Normalize model identifiers sent from the UI to locate provider models."""
+    if not model_identifier or not isinstance(model_identifier, str):
+        return ""
+
+    normalized = model_identifier.strip()
+    if normalized.startswith("grid_"):
+        normalized = normalized[len("grid_") :]
+    return sanitize_grid_model_name(normalized)
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +125,7 @@ GRID_STATUS_ENDPOINT = f"{GRID_BASE_URL}/api/v2/generate/text/status"
 
 class GridModel(BaseModel):
     name: str
+    raw_name: str = ""
     count: int
     queued: float
     eta: int
@@ -70,6 +160,7 @@ class GridModelsProvider:
         self.cached_models = []
         self.cache_time = 0
         self.cache_duration = 30  # 30 seconds cache
+        self.model_name_lookup: Dict[str, str] = {}
         
     async def get_models(self) -> List[GridModel]:
         """Get available models from Grid API with caching"""
@@ -84,19 +175,31 @@ class GridModelsProvider:
                 async with session.get(GRID_MODELS_ENDPOINT, headers=self.headers) as response:
                     if response.status == 200:
                         data = await response.json()
-                        models = []
-                        
+                        models: List[GridModel] = []
+                        name_lookup: Dict[str, str] = {}
+
                         for model_data in data:
                             if model_data.get("type") == "text":
+                                raw_name = model_data.get("name", "")
+                                clean_name = sanitize_grid_model_name(raw_name)
                                 model = GridModel(
-                                    name=model_data.get("name", ""),
+                                    name=clean_name,
+                                    raw_name=raw_name,
                                     count=model_data.get("count", 0),
                                     queued=model_data.get("queued", 0.0),
                                     eta=model_data.get("eta", 0),
-                                    performance=model_data.get("performance", 0.0)
+                                    performance=model_data.get("performance", 0.0),
                                 )
                                 models.append(model)
-                        
+
+                                if clean_name:
+                                    name_lookup[clean_name] = raw_name
+                                    name_lookup[f"grid_{clean_name}"] = raw_name
+                                    name_lookup[f"grid/{clean_name}"] = raw_name
+                                if raw_name:
+                                    name_lookup[raw_name] = raw_name
+
+                        self.model_name_lookup = name_lookup
                         self.cached_models = models
                         self.cache_time = current_time
                         return models
@@ -123,7 +226,11 @@ class GridModelsProvider:
                             if worker_data.get("type") == "text" and worker_data.get("online"):
                                 worker = GridWorker(
                                     name=worker_data.get("name", ""),
-                                    models=worker_data.get("models", []),
+                                    models=[
+                                        sanitized
+                                        for model in worker_data.get("models", [])
+                                        if (sanitized := sanitize_grid_model_name(model))
+                                    ],
                                     performance=worker_data.get("performance", "0"),
                                     trusted=worker_data.get("trusted", False),
                                     maintenance_mode=worker_data.get("maintenance_mode", False),
@@ -139,6 +246,27 @@ class GridModelsProvider:
         except Exception as e:
             logger.error(f"Error fetching Grid workers: {e}")
             return []
+
+    def resolve_model_name(self, model_identifier: str) -> str:
+        """Translate UI model identifiers to the provider format."""
+        if not model_identifier or not isinstance(model_identifier, str):
+            return ""
+
+        candidate = model_identifier.strip()
+        # Try direct lookups first in case the identifier is already raw.
+        if candidate in self.model_name_lookup:
+            return self.model_name_lookup[candidate]
+
+        normalized = normalize_model_identifier(candidate)
+        if normalized in self.model_name_lookup:
+            return self.model_name_lookup[normalized]
+
+        grid_variant = f"grid/{normalized}" if normalized else ""
+        if grid_variant and grid_variant in self.model_name_lookup:
+            return self.model_name_lookup[grid_variant]
+
+        # Fall back to the candidate or the synthesized grid variant.
+        return grid_variant or normalized or candidate
 
 # Global provider instance
 grid_provider = GridModelsProvider()
@@ -195,7 +323,8 @@ async def get_grid_models():
                     "queue_length": model.queued,
                     "eta": model.eta,
                     "performance": str(model.performance),
-                    "worker_count": model.count
+                    "worker_count": model.count,
+                    "provider_model": model.raw_name or model.name,
                 }
             }
             openwebui_models.append(openwebui_model)
@@ -218,6 +347,7 @@ async def refresh_grid_models():
         # Clear cache to force refresh
         grid_provider.cached_models = []
         grid_provider.cache_time = 0
+        grid_provider.model_name_lookup = {}
         
         models = await grid_provider.get_models()
         return {"message": f"Refreshed {len(models)} Grid models", "count": len(models)}
@@ -264,6 +394,10 @@ async def grid_chat_completion(request: Request):
         if not user_message:
             raise HTTPException(status_code=400, detail="No user message found")
         
+        provider_model_name = grid_provider.resolve_model_name(model_name)
+        if not provider_model_name:
+            raise HTTPException(status_code=400, detail="Invalid Grid model selected")
+
         # Prepare Grid generation request
         grid_request = GridGenerationRequest(
             prompt=user_message,
@@ -283,7 +417,7 @@ async def grid_chat_completion(request: Request):
                 "frmtrmblln": False,
                 "stop_sequence": ["You:", "Human:", "Assistant:", "###"]
             },
-            models=[model_name.replace("grid_", "")],  # Remove grid_ prefix
+            models=[provider_model_name],
             trusted_workers=False,
             slow_workers=True
         )
@@ -322,6 +456,7 @@ async def grid_chat_completion(request: Request):
                                 generations = status_data.get("generations", [])
                                 if generations:
                                     generated_text = generations[0].get("text", "")
+                                    processed_text = convert_thinking_tags_to_details(generated_text)
                                     t_end = time.time()
                                     elapsed_ms = int((t_end - t_start) * 1000)
                                     prompt_tokens = len(user_message.split())
@@ -340,7 +475,7 @@ async def grid_chat_completion(request: Request):
                                             "index": 0,
                                             "message": {
                                                 "role": "assistant",
-                                                "content": generated_text
+                                                "content": processed_text
                                             },
                                             "finish_reason": "stop"
                                         }],
@@ -389,14 +524,10 @@ def convert_messages_to_prompt(messages: List[dict]) -> str:
             continue
         
         # Filter out thinking tags to avoid context window bloat
-        # Remove <think>...</think> and <details type="reasoning">...</details> tags
-        import re
-        content = re.sub(r'<think>.*?</think>', '', content, flags=re.DOTALL)
-        content = re.sub(r'<details[^>]*type="reasoning"[^>]*>.*?</details>', '', content, flags=re.DOTALL)
-        content = re.sub(r'<details[^>]*>.*?<summary>Thinking</summary>.*?</details>', '', content, flags=re.DOTALL)
-        
+        content = filter_thinking_from_content(content)
+
         # Skip if content is empty after filtering
-        if not content.strip():
+        if not content:
             continue
             
         if role == "user":
@@ -427,6 +558,10 @@ async def grid_chat_completion_from_form_data(form_data: dict):
         if not conversation_prompt.strip():
             raise HTTPException(status_code=400, detail="No valid conversation content found")
         
+        provider_model_name = grid_provider.resolve_model_name(model_name)
+        if not provider_model_name:
+            raise HTTPException(status_code=400, detail="Invalid Grid model selected")
+
         # Prepare Grid generation request
         grid_request = GridGenerationRequest(
             prompt=conversation_prompt,
@@ -446,7 +581,7 @@ async def grid_chat_completion_from_form_data(form_data: dict):
                 "frmtrmblln": False,
                 "stop_sequence": ["You:", "Human:", "Assistant:", "###"]
             },
-            models=[model_name.replace("grid_", "")],  # Remove grid_ prefix
+            models=[provider_model_name],
             trusted_workers=False,
             slow_workers=True
         )
@@ -485,6 +620,7 @@ async def grid_chat_completion_from_form_data(form_data: dict):
                                 generations = status_data.get("generations", [])
                                 if generations:
                                     generated_text = generations[0].get("text", "")
+                                    processed_text = convert_thinking_tags_to_details(generated_text)
                                     t_end = time.time()
                                     elapsed_ms = int((t_end - t_start) * 1000)
                                     prompt_tokens = len(conversation_prompt.split())
@@ -504,7 +640,7 @@ async def grid_chat_completion_from_form_data(form_data: dict):
                                             "index": 0,
                                             "message": {
                                                 "role": "assistant",
-                                                "content": generated_text
+                                                "content": processed_text
                                             },
                                             "finish_reason": "stop"
                                         }],
@@ -572,7 +708,7 @@ async def grid_chat_completion_from_form_data(form_data: dict):
                 "frmtrmblln": False,
                 "stop_sequence": ["You:", "Human:", "Assistant:", "###"]
             },
-            models=[model_name.replace("grid_", "")],  # Remove grid_ prefix
+            models=[provider_model_name],
             trusted_workers=False,
             slow_workers=True
         )
@@ -611,6 +747,7 @@ async def grid_chat_completion_from_form_data(form_data: dict):
                                 generations = status_data.get("generations", [])
                                 if generations:
                                     generated_text = generations[0].get("text", "")
+                                    processed_text = convert_thinking_tags_to_details(generated_text)
                                     
                                     # Create OpenAI-compatible response format
                                     # This will be processed by Open WebUI's native pipeline
@@ -630,7 +767,7 @@ async def grid_chat_completion_from_form_data(form_data: dict):
                                             "index": 0,
                                             "message": {
                                                 "role": "assistant",
-                                                "content": generated_text
+                                                "content": processed_text
                                             },
                                             "finish_reason": "stop"
                                         }],
@@ -702,6 +839,7 @@ async def get_grid_models_for_openwebui():
                     "eta": model.eta,
                     "performance": str(model.performance),
                     "worker_count": model.count,
+                    "provider_model": model.raw_name or model.name,
                 },
             }
             openwebui_models.append(openwebui_model)

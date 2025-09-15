@@ -584,25 +584,49 @@ async def chat_image_generation_handler(
 
         if request.app.state.config.IMAGE_GENERATION_ENGINE == "grid":
             model_hint = form_data.get("image_model")
+            style_hint = form_data.get("image_style")
             try:
-                log.info(f"Image generation (Grid): model_hint={model_hint}")
+                log.info(f"Image generation (Grid): model_hint={model_hint} style_hint={style_hint}")
             except Exception:
                 pass
             images = await generate_images_grid(
                 request=request,
-                form_data=_GenForm(**{"prompt": prompt, **({"model": model_hint} if model_hint else {})}),
+                form_data=_GenForm(
+                    **{
+                        "prompt": prompt,
+                        **({"style": style_hint} if style_hint else {}),
+                        **(
+                            {"model": model_hint}
+                            if model_hint and not style_hint
+                            else {}
+                        ),
+                    }
+                ),
                 user=user,
                 progress_cb=progress_cb,
             )
         else:
             model_hint = form_data.get("image_model")
+            style_hint = form_data.get("image_style")
             try:
-                log.info(f"Image generation (Non-Grid): model_hint={model_hint}")
+                log.info(
+                    f"Image generation (Non-Grid): model_hint={model_hint} style_hint={style_hint}"
+                )
             except Exception:
                 pass
             images = await image_generations(
                 request=request,
-                form_data=GenerateImageForm(**{"prompt": prompt, **({"model": model_hint} if model_hint else {})}),
+                form_data=GenerateImageForm(
+                    **{
+                        "prompt": prompt,
+                        **({"style": style_hint} if style_hint else {}),
+                        **(
+                            {"model": model_hint}
+                            if model_hint and not style_hint
+                            else {}
+                        ),
+                    }
+                ),
                 user=user,
             )
 
@@ -629,7 +653,8 @@ async def chat_image_generation_handler(
             }
         )
 
-        system_message_content = "<context>User is shown the generated image, tell the user that the image has been generated</context>"
+        form_data["__skip_completion__"] = True
+        system_message_content = None
     except Exception as e:
         log.exception(e)
         await __event_emitter__(

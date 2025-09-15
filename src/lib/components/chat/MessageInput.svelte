@@ -64,9 +64,8 @@
 	import Photo from '../icons/Photo.svelte';
 	import Wrench from '../icons/Wrench.svelte';
 	import CommandLine from '../icons/CommandLine.svelte';
-    import Sparkles from '../icons/Sparkles.svelte';
-    import { getImageGenerationModels } from '$lib/apis/images';
-    import { getImageStyles } from '$lib/apis/images';
+	import Sparkles from '../icons/Sparkles.svelte';
+	import { getImageStyles } from '$lib/apis/images';
 
 	import { KokoroWorker } from '$lib/workers/KokoroWorker';
 	import InputVariablesModal from './MessageInput/InputVariablesModal.svelte';
@@ -98,26 +97,12 @@
 	export let selectedToolIds = [];
 	export let selectedFilterIds = [];
 
-	export let imageGenerationEnabled = false;
-let imageModels: { id: string; name: string }[] = [];
-export let selectedImageModelComposer: string = '';
+export let imageGenerationEnabled = false;
 let imageStyles: { id: string; name: string }[] = [];
 export let selectedImageStyleComposer: string = '';
 
 onMount(async () => {
     try {
-        imageModels = (await getImageGenerationModels(localStorage.token)) ?? [];
-        // Try to restore previously chosen image model
-        const savedModel = localStorage.getItem('owui_image_model_id') || '';
-        // Only set a default if none selected or selection no longer exists
-        if (!selectedImageModelComposer || !imageModels.some((m) => m.id === selectedImageModelComposer)) {
-            if (savedModel && imageModels.some((m) => m.id === savedModel)) {
-                selectedImageModelComposer = savedModel;
-            } else {
-                selectedImageModelComposer = imageModels?.[0]?.id ?? '';
-            }
-        }
-
         // Fetch styles list from backend
         imageStyles = (await getImageStyles(localStorage.token)) ?? [];
 
@@ -131,16 +116,13 @@ onMount(async () => {
             }
         }
     } catch (e) {
-        console.debug('image models fetch error (composer)', e);
+        console.debug('image styles fetch error (composer)', e);
     }
 });
 
-// Persist composer-selected image model so other views can use it as default
+// Persist composer-selected image style so other views can use it as default
 $: (() => {
     try {
-        if (selectedImageModelComposer) {
-            localStorage.setItem('owui_image_model_id', selectedImageModelComposer);
-        }
         if (selectedImageStyleComposer) {
             localStorage.setItem('owui_image_style_id', selectedImageStyleComposer);
         }
@@ -1882,19 +1864,6 @@ $: (() => {
 													</Tooltip>
 
 													{#if imageGenerationEnabled}
-														<!-- Image model selector (composer) -->
-														{#if imageModels && imageModels.length > 0}
-															<select
-																bind:value={selectedImageModelComposer}
-																class="ml-1 text-[10px] px-1 py-0.5 rounded bg-transparent border border-gray-100 dark:border-gray-800 text-gray-600 dark:text-gray-300"
-																aria-label={$i18n.t('Select image model')}
-															>
-																{#each imageModels as m}
-																	<option value={m.id}>{m.name}</option>
-																{/each}
-															</select>
-														{/if}
-
 														<!-- Image style selector (composer) -->
 														{#if imageStyles && imageStyles.length > 0}
 															<select

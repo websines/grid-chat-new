@@ -28,5 +28,8 @@ export default defineConfig({
 	},
 	esbuild: {
 		pure: process.env.ENV === 'dev' ? [] : ['console.log', 'console.debug', 'console.error']
+	},
+	server: {
+		allowedHosts: ['openwebui.subh-dev.xyz']
 	}
 });

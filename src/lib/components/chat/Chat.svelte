@@ -123,7 +123,7 @@
 	let selectedToolIds = [];
 	let selectedFilterIds = [];
 let imageGenerationEnabled = false;
-let selectedImageModelComposer = '';
+let selectedImageStyleComposer = '';
 	let webSearchEnabled = false;
 	let codeInterpreterEnabled = false;
 
@@ -1640,14 +1640,15 @@ let selectedImageModelComposer = '';
 		chats.set(await getChatList(localStorage.token, $currentChatPage));
 	};
 
-    const getEffectiveImageModel = () => {
-        // Prefer bound composer value; if empty, fall back to last persisted selection
+    const getEffectiveImageStyle = () => {
         try {
-            if (selectedImageModelComposer && selectedImageModelComposer.trim() !== '') return selectedImageModelComposer;
-            const saved = localStorage.getItem('owui_image_model_id') || '';
+            if (selectedImageStyleComposer && selectedImageStyleComposer.trim() !== '') {
+                return selectedImageStyleComposer;
+            }
+            const saved = localStorage.getItem('owui_image_style_id') || '';
             return saved || '';
         } catch (_) {
-            return selectedImageModelComposer || '';
+            return selectedImageStyleComposer || '';
         }
     };
 
@@ -1661,10 +1662,6 @@ let selectedImageModelComposer = '';
 					($user?.role === 'admin' || $user?.permissions?.features?.image_generation)
             ? imageGenerationEnabled
             : false,
-            // Include image model hint for backend when image generation is enabled
-            ...(imageGenerationEnabled && getEffectiveImageModel()
-                ? { image_model: getEffectiveImageModel() }
-                : {}),
 				code_interpreter:
 					$config?.features?.enable_code_interpreter &&
 					($user?.role === 'admin' || $user?.permissions?.features?.code_interpreter)
@@ -1808,9 +1805,9 @@ let selectedImageModelComposer = '';
 				tool_ids: selectedToolIds.length > 0 ? selectedToolIds : undefined,
 				tool_servers: $toolServers,
                 features: getFeatures(),
-                // Also send image_model at top-level to ensure backend has it
-                ...(imageGenerationEnabled && getEffectiveImageModel()
-                    ? { image_model: getEffectiveImageModel() }
+                // Also send image_style at top-level to ensure backend has it
+                ...(imageGenerationEnabled && getEffectiveImageStyle()
+                    ? { image_style: getEffectiveImageStyle() }
                     : {}),
                 variables: {
                     ...getPromptVariables($user?.name, $settings?.userLocation ? userLocation : undefined)
@@ -2370,7 +2367,7 @@ let selectedImageModelComposer = '';
 									bind:selectedToolIds
 									bind:selectedFilterIds
 									bind:imageGenerationEnabled
-									bind:selectedImageModelComposer
+									bind:selectedImageStyleComposer
 									bind:codeInterpreterEnabled
 									bind:webSearchEnabled
 									bind:atSelectedModel

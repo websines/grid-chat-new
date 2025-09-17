@@ -1,400 +1,263 @@
 {
-  "flux": {
-    "prompt": "{p}{np}",
-    "model": "Flux.1-Schnell fp8 (Compact)",
-    "steps": 4,
-    "width": 1024,
-    "height": 1024,
-    "cfg_scale": 1,
-    "karras": false,
-    "sampler_name": "k_euler"
-  },
-  "flux-small": {
-    "width": 512,
-    "height": 512,
-    "prompt": "{p}{np}",
-    "model": "Flux.1-Schnell fp8 (Compact)",
-    "steps": 4,
-    "cfg_scale": 1,
-    "karras": false,
-    "sampler_name": "k_euler"
-  },
-  "flux-vertical": {
-    "width": 704,
-    "height": 1472,
-    "prompt": "{p}{np}",
-    "model": "Flux.1-Schnell fp8 (Compact)",
-    "steps": 4,
-    "cfg_scale": 1,
-    "karras": false,
-    "sampler_name": "k_euler"
-  },
-  "flux-extreme-vertical": {
-    "width": 640,
-    "height": 1536,
-    "prompt": "{p}{np}",
-    "model": "Flux.1-Schnell fp8 (Compact)",
-    "steps": 4,
-    "cfg_scale": 1,
-    "karras": false,
-    "sampler_name": "k_euler"
-  },
-  "flux-portrait": {
-    "width": 896,
-    "height": 1152,
-    "prompt": "{p}{np}",
-    "model": "Flux.1-Schnell fp8 (Compact)",
-    "steps": 4,
-    "cfg_scale": 1,
-    "karras": false,
-    "sampler_name": "k_euler"
-  },
-  "flux-portrait-big": {
-    "width": 1024,
-    "height": 1408,
-    "prompt": "{p}{np}",
-    "model": "Flux.1-Schnell fp8 (Compact)",
-    "steps": 4,
-    "cfg_scale": 1,
-    "karras": false,
-    "sampler_name": "k_euler"
-  },
-  "flux-photo": {
-    "width": 1024,
-    "height": 1024,
-    "prompt": "{p}{np}",
-    "model": "Flux.1-Schnell fp8 (Compact)",
-    "steps": 4,
-    "cfg_scale": 1,
-    "karras": false,
-    "sampler_name": "k_euler"
-  },
-  "flux-photo-horizontal": {
-    "width": 1472,
-    "height": 1024,
-    "prompt": "{p}{np}",
-    "model": "Flux.1-Schnell fp8 (Compact)",
-    "steps": 4,
-    "cfg_scale": 1,
-    "karras": false,
-    "sampler_name": "k_euler"
-  },
-  "flux-landscape": {
-    "width": 1472,
-    "height": 1024,
-    "prompt": "{p}{np}",
-    "model": "Flux.1-Schnell fp8 (Compact)",
-    "steps": 4,
-    "cfg_scale": 1,
-    "karras": false,
-    "sampler_name": "k_euler"
-  },
-  "flux-landscape-big": {
-    "width": 1536,
-    "height": 1024,
-    "prompt": "{p}{np}",
-    "model": "Flux.1-Schnell fp8 (Compact)",
-    "steps": 4,
-    "cfg_scale": 1,
-    "karras": false,
-    "sampler_name": "k_euler"
-  },
-  "flux-widescreen": {
-    "width": 1792,
-    "height": 1024,
-    "prompt": "{p}{np}",
-    "model": "Flux.1-Schnell fp8 (Compact)",
-    "steps": 4,
-    "cfg_scale": 1,
-    "karras": false,
-    "sampler_name": "k_euler"
-  },
-  "flux-cinematic": {
-    "width": 2048,
-    "height": 1024,
-    "prompt": "{p}{np}",
-    "model": "Flux.1-Schnell fp8 (Compact)",
-    "steps": 4,
-    "cfg_scale": 1,
-    "karras": false,
-    "sampler_name": "k_euler"
-  },
-  "fluxkrea": {
-    "prompt": "{p}{np}",
-    "model": "flux.1-krea-dev",
-    "steps": 4,
-    "width": 1024,
-    "height": 1024,
-    "cfg_scale": 1,
-    "karras": false,
-    "sampler_name": "k_euler"
-  },
-  "fluxkrea-small": {
-    "width": 512,
-    "height": 512,
-    "prompt": "{p}{np}",
-    "model": "Flux.1-Schnell fp8 (Compact)",
-    "steps": 30,
-    "cfg_scale": 4.0,
-    "karras": false,
-    "sampler_name": "euler"
-  },
-  "fluxkrea-vertical": {
-    "width": 704,
-    "height": 1472,
-    "prompt": "{p}{np}",
-    "model": "Flux.1-Schnell fp8 (Compact)",
-    "steps": 30,
-    "cfg_scale": 4.0,
-    "karras": false,
-    "sampler_name": "euler"
-  },
-  "fluxkrea-extreme-vertical": {
-    "width": 640,
-    "height": 1536,
-    "prompt": "{p}{np}",
-    "model": "Flux.1-Schnell fp8 (Compact)",
-    "steps": 30,
-    "cfg_scale": 4.0,
-    "karras": false,
-    "sampler_name": "euler"
-  },
-  "fluxkrea-portrait": {
-    "width": 896,
-    "height": 1152,
-    "prompt": "{p}{np}",
-    "model": "Flux.1-Schnell fp8 (Compact)",
-    "steps": 30,
-    "cfg_scale": 4.0,
-    "karras": false,
-    "sampler_name": "euler"
-  },
-  "fluxkrea-portrait-big": {
-    "width": 1024,
-    "height": 1408,
-    "prompt": "{p}{np}",
-    "model": "Flux.1-Schnell fp8 (Compact)",
-    "steps": 30,
-    "cfg_scale": 4.0,
-    "karras": false,
-    "sampler_name": "euler"
-  },
-  "fluxkrea-photo": {
-    "width": 1024,
-    "height": 1024,
-    "prompt": "{p}{np}",
-    "model": "Flux.1-Schnell fp8 (Compact)",
-    "steps": 30,
-    "cfg_scale": 4.0,
-    "karras": false,
-    "sampler_name": "euler"
-  },
-  "fluxkrea-photo-horizontal": {
-    "width": 1472,
-    "height": 1024,
-    "prompt": "{p}{np}",
-    "model": "Flux.1-Schnell fp8 (Compact)",
-    "steps": 30,
-    "cfg_scale": 4.0,
-    "karras": false,
-    "sampler_name": "euler"
-  },
-  "fluxkrea-landscape": {
-    "width": 1472,
-    "height": 1024,
-    "prompt": "{p}{np}",
-    "model": "Flux.1-Schnell fp8 (Compact)",
-    "steps": 30,
-    "cfg_scale": 4.0,
-    "karras": false,
-    "sampler_name": "euler"
-  },
-  "fluxkrea-landscape-big": {
-    "width": 1536,
-    "height": 1024,
-    "prompt": "{p}{np}",
-    "model": "Flux.1-Schnell fp8 (Compact)",
-    "steps": 30,
-    "cfg_scale": 4.0,
-    "karras": false,
-    "sampler_name": "euler"
-  },
-  "fluxkrea-widescreen": {
-    "width": 1792,
-    "height": 1024,
-    "prompt": "{p}{np}",
-    "model": "Flux.1-Schnell fp8 (Compact)",
-    "steps": 30,
-    "cfg_scale": 4.0,
-    "karras": false,
-    "sampler_name": "euler"
-  },
-  "fluxkrea-cinematic": {
-    "width": 2048,
-    "height": 1024,
-    "prompt": "{p}{np}",
-    "model": "Flux.1-Schnell fp8 (Compact)",
-    "steps": 30,
-    "cfg_scale": 4.0,
-    "karras": false,
-    "sampler_name": "euler"
-  },
-  "sdxl": {
-    "prompt": "{p}{np}",
-    "model": "SDXL 1.0",
-    "steps": 8,
-    "width": 1024,
-    "height": 1024,
-    "cfg_scale": 2,
-    "sampler_name": "k_dpmpp_sde",
-    "loras": [
-      {
-        "name": "247778",
-        "is_version": true
-      }
-    ]
-  },
-  "sdxl-vertical": {
-    "prompt": "{p}{np}",
-    "model": "SDXL 1.0",
-    "steps": 8,
-    "width": 704,
-    "height": 1472,
-    "cfg_scale": 2,
-    "sampler_name": "k_dpmpp_sde",
-    "loras": [
-      {
-        "name": "247778",
-        "is_version": true
-      }
-    ]
-  },
-  "sdxl-portrait": {
-    "prompt": "{p}{np}",
-    "model": "SDXL 1.0",
-    "steps": 8,
-    "width": 896,
-    "height": 1152,
-    "cfg_scale": 2,
-    "sampler_name": "k_dpmpp_sde",
-    "loras": [
-      {
-        "name": "247778",
-        "is_version": true
-      }
-    ]
-  },
-  "sdxl-landscape": {
-    "prompt": "{p}{np}",
-    "model": "SDXL 1.0",
-    "steps": 8,
-    "width": 1472,
-    "height": 1024,
-    "cfg_scale": 2,
-    "sampler_name": "k_dpmpp_sde",
-    "loras": [
-      {
-        "name": "247778",
-        "is_version": true
-      }
-    ]
-  },
-  "sdxl-widescreen": {
-    "prompt": "{p}{np}",
-    "model": "SDXL 1.0",
-    "steps": 8,
-    "width": 1792,
-    "height": 1024,
-    "cfg_scale": 2,
-    "sampler_name": "k_dpmpp_sde",
-    "loras": [
-      {
-        "name": "247778",
-        "is_version": true
-      }
-    ]
-  },
-  "cascade": {
-    "prompt": "{p}{np}",
-    "model": "Stable Cascade 1.0",
-    "steps": 25,
-    "width": 1024,
-    "height": 1024,
-    "cfg_scale": 5
-  },
-  "cascade+": {
-    "prompt": "{p}{np}",
-    "model": "Stable Cascade 1.0",
-    "steps": 20,
-    "width": 1024,
-    "height": 1024,
-    "cfg_scale": 5,
-    "hires_fix": true
-  },
-  "raw": {
-    "prompt": "{p}{np}",
-    "model": "stable_diffusion"
-  },
-  "raw2": {
-    "prompt": "{p}{np}",
-    "model": "stable_diffusion_2.1",
-    "sampler_name": "dpmsolver",
-    "width": 768,
-    "height": 768
-  },
-  "deliberate": {
-    "prompt": "{p}{np}",
-    "model": "Deliberate",
-    "enhance": true
-  },
-  "dreamshaper": {
-    "prompt": "{p}{np}",
-    "model": "DreamShaper XL",
-    "enhance": true
-  },
-  "epic": {
-    "prompt": "{p}{np}",
-    "model": "Epic Diffusion",
-    "enhance": true
-  },
-  "realistic": {
-    "prompt": "{p}{np}",
-    "model": "Realistic Vision",
-    "enhance": true
-  },
-  "photographic": {
-    "prompt": "{p}{np}",
-    "model": "ICBINP - I Can't Believe It's Not Photography",
-    "enhance": true
-  },
-  "cinematic": {
-    "prompt": "{p}{np}",
-    "model": "Movie Diffusion",
-    "enhance": true
-  },
-  "artistic": {
-    "prompt": "{p}{np}",
-    "model": "Unstable Ink Dream",
-    "enhance": true
-  },
-  "anime": {
-    "prompt": "{p}{np}",
-    "model": "Anything v3",
-    "enhance": true
-  },
-  "anime-xl": {
-    "prompt": "{p}{np}",
-    "model": "Animagine XL",
-    "enhance": true
-  },
-  "realistic-xl": {
-    "prompt": "{p}{np}",
-    "model": "Juggernaut XL",
-    "enhance": true
-  },
-  "photographic-xl": {
-    "prompt": "{p}{np}",
-    "model": "ICBINP XL",
-    "enhance": true
-  }
+    "flux": {
+        "prompt": "{p}{np}",
+        "model": "FLUX.1-dev",
+        "steps": 4,
+        "width": 1024,
+        "height": 1024,
+        "cfg_scale": 1,
+        "karras": false,
+        "sampler_name": "k_euler"
+    },
+    "flux-portrait": {
+        "width": 832,
+        "height": 1216,
+        "prompt": "{p}{np}",
+        "model": "FLUX.1-dev",
+        "steps": 4,
+        "cfg_scale": 1,
+        "karras": false,
+        "sampler_name": "k_euler"
+    },
+    "flux-landscape": {
+        "width": 1280,
+        "height": 832,
+        "prompt": "{p}{np}",
+        "model": "FLUX.1-dev",
+        "steps": 4,
+        "cfg_scale": 1,
+        "karras": false,
+        "sampler_name": "k_euler"
+    },
+    "flux-impressionist": {
+        "prompt": "{p} . A vibrant impressionist painting with bold brush strokes and rich color contrasts, capturing light and shadow in a dynamic and emotional way.###{np}",
+        "model": "FLUX.1-dev",
+        "steps": 4,
+        "sampler_name": "k_euler",
+        "cfg_scale": 1,
+        "karras": false,
+        "width": 1024,
+        "height": 1024
+    },
+    "flux-watercolor": {
+        "prompt": "{p} . A watercolor painting with soft gradients, delicate blending, and light washes, giving the scene a gentle, dreamy, and fluid appearance.###{np}",
+        "model": "FLUX.1-dev",
+        "steps": 4,
+        "sampler_name": "k_euler",
+        "cfg_scale": 1,
+        "karras": false,
+        "width": 1024,
+        "height": 1024
+    },
+    "flux-comic": {
+        "prompt": "{p} . A comic book style, with bold lines, halftone shading, and dynamic action scenes, capturing a dramatic and energetic feel.###{np}",
+        "model": "FLUX.1-dev",
+        "steps": 4,
+        "sampler_name": "k_euler",
+        "cfg_scale": 1,
+        "karras": false,
+        "width": 1024,
+        "height": 1024
+    },
+    "fluxkrea": {
+        "prompt": "{p}{np}",
+        "model": "flux.1-krea-dev",
+        "steps": 29,
+        "width": 1024,
+        "height": 1024,
+        "cfg_scale": 4,
+        "karras": false,
+        "sampler_name": "k_euler"
+    },
+    "fluxkrea-portrait": {
+        "width": 832,
+        "height": 1216,
+        "prompt": "{p}{np}",
+        "model": "flux.1-krea-dev",
+        "steps": 29,
+        "cfg_scale": 4,
+        "karras": false,
+        "sampler_name": "k_euler"
+    },
+    "fluxkrea-landscape": {
+        "width": 1280,
+        "height": 832,
+        "prompt": "{p}{np}",
+        "model": "flux.1-krea-dev",
+        "steps": 29,
+        "cfg_scale": 4,
+        "karras": false,
+        "sampler_name": "k_euler"
+    },
+    "fluxkrea-impressionist": {
+        "prompt": "{p} . A vibrant impressionist painting with bold brush strokes and rich color contrasts, capturing light and shadow in a dynamic and emotional way.###{np}",
+        "model": "flux.1-krea-dev",
+        "steps": 29,
+        "sampler_name": "k_euler",
+        "cfg_scale": 4,
+        "karras": false,
+        "width": 1024,
+        "height": 1024
+    },
+    "fluxkrea-watercolor": {
+        "prompt": "{p} . A watercolor painting with soft gradients, delicate blending, and light washes, giving the scene a gentle, dreamy, and fluid appearance.###{np}",
+        "model": "flux.1-krea-dev",
+        "steps": 29,
+        "sampler_name": "k_euler",
+        "cfg_scale": 4,
+        "karras": false,
+        "width": 1024,
+        "height": 1024
+    },
+    "fluxkrea-comic": {
+        "prompt": "{p} . A comic book style, with bold lines, halftone shading, and dynamic action scenes, capturing a dramatic and energetic feel.###{np}",
+        "model": "flux.1-krea-dev",
+        "steps": 29,
+        "sampler_name": "k_euler",
+        "cfg_scale": 4,
+        "karras": false,
+        "width": 1024,
+        "height": 1024
+    },
+    "chroma": {
+        "prompt": "{p}{np}",
+        "model": "Chroma",
+        "steps": 40,
+        "width": 1024,
+        "height": 1024,
+        "cfg_scale": 4,
+        "karras": false,
+        "sampler_name": "k_euler_a"
+    },
+    "chroma-portrait": {
+        "width": 832,
+        "height": 1216,
+        "prompt": "{p}{np}",
+        "model": "Chroma",
+        "steps": 40,
+        "cfg_scale": 4,
+        "karras": false,
+        "sampler_name": "k_euler_a"
+    },
+    "chroma-landscape": {
+        "width": 1280,
+        "height": 832,
+        "prompt": "{p}{np}",
+        "model": "Chroma",
+        "steps": 40,
+        "cfg_scale": 4,
+        "karras": false,
+        "sampler_name": "k_euler_a"
+    },
+    "chroma-impressionist": {
+        "prompt": "{p} . A vibrant impressionist painting with bold brush strokes and rich color contrasts, capturing light and shadow in a dynamic and emotional way.###{np}",
+        "model": "Chroma",
+        "steps": 40,
+        "sampler_name": "k_euler_a",
+        "cfg_scale": 4,
+        "karras": false,
+        "width": 1024,
+        "height": 1024
+    },
+    "chroma-watercolor": {
+        "prompt": "{p} . A watercolor painting with soft gradients, delicate blending, and light washes, giving the scene a gentle, dreamy, and fluid appearance.###{np}",
+        "model": "Chroma",
+        "steps": 40,
+        "sampler_name": "k_euler_a",
+        "cfg_scale": 4,
+        "karras": false,
+        "width": 1024,
+        "height": 1024
+    },
+    "chroma-comic": {
+        "prompt": "{p} . A comic book style, with bold lines, halftone shading, and dynamic action scenes, capturing a dramatic and energetic feel.###{np}",
+        "model": "Chroma",
+        "steps": 20,
+        "sampler_name": "k_euler",
+        "cfg_scale": 4,
+        "karras": false,
+        "width": 1024,
+        "height": 1024
+    },
+    "flux-kontext": {
+        "prompt": "{p}{np}",
+        "model": "FLUX.1-dev-Kontext-fp8-scaled",
+        "steps": 20,
+        "width": 1024,
+        "height": 1024,
+        "cfg_scale": 1,
+        "karras": false,
+        "sampler_name": "k_euler"
+    },
+    "sdxl": {
+        "prompt": "{p}{np}",
+        "model": "SDXL 1.0",
+        "steps": 25,
+        "width": 1024,
+        "height": 1024,
+        "cfg_scale": 8,
+        "karras": true,
+        "sampler_name": "k_euler"
+    },
+    "sdxl-portrait": {
+        "width": 832,
+        "height": 1216,
+        "prompt": "{p}{np}",
+        "model": "SDXL 1.0",
+        "steps": 25,
+        "cfg_scale": 8,
+        "karras": true,
+        "sampler_name": "k_euler"
+    },
+    "sdxl-landscape": {
+        "width": 1280,
+        "height": 832,
+        "prompt": "{p}{np}",
+        "model": "SDXL 1.0",
+        "steps": 25,
+        "cfg_scale": 8,
+        "karras": true,
+        "sampler_name": "k_euler"
+    },
+    "sdxl-impressionist": {
+        "prompt": "{p} . A vibrant impressionist painting with bold brush strokes and rich color contrasts, capturing light and shadow in a dynamic and emotional way.###{np}",
+        "model": "SDXL 1.0",
+        "steps": 25,
+        "sampler_name": "k_euler",
+        "cfg_scale": 8,
+        "karras": true,
+        "width": 1024,
+        "height": 1024
+    },
+    "sdxl-watercolor": {
+        "prompt": "{p} . A watercolor painting with soft gradients, delicate blending, and light washes, giving the scene a gentle, dreamy, and fluid appearance.###{np}",
+        "model": "SDXL 1.0",
+        "steps": 25,
+        "sampler_name": "k_euler",
+        "cfg_scale": 8,
+        "karras": true,
+        "width": 1024,
+        "height": 1024
+    },
+    "sdxl-comic": {
+        "prompt": "{p} . A comic book style, with bold lines, halftone shading, and dynamic action scenes, capturing a dramatic and energetic feel.###{np}",
+        "model": "SDXL 1.0",
+        "steps": 25,
+        "sampler_name": "k_euler",
+        "cfg_scale": 8,
+        "karras": true,
+        "width": 1024,
+        "height": 1024
+    },
+    "wan2.2-t2v-a14b": {
+        "prompt": "{p}{np}",
+        "model": "wan2.2-t2v-a14b",
+        "steps": 4,
+        "cfg_scale": 1,
+        "sampler_name": "k_euler",
+        "width": 640,
+        "height": 640,
+        "fps": 16,
+        "length": 81
+    }
 }

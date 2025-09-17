@@ -15,7 +15,10 @@
 	}
 
 	let history = [];
+	let displayHistory = [];
 	let status = null;
+
+	const hasWaitTime = (entry) => entry?.wait_time !== undefined && entry?.wait_time !== null;
 
 	$: if (history && history.length > 0) {
 		status = history.at(-1);
@@ -24,6 +27,25 @@
 	$: if (JSON.stringify(statusHistory) !== JSON.stringify(history)) {
 		history = statusHistory;
 	}
+
+	$: displayHistory = (() => {
+		if (!history || history.length === 0) {
+			return [];
+		}
+		let lastWaitEntry = null;
+		const entries = [];
+		for (const entry of history) {
+			if (hasWaitTime(entry)) {
+				lastWaitEntry = entry;
+				continue;
+			}
+			entries.push(entry);
+		}
+		if (lastWaitEntry) {
+			entries.push(lastWaitEntry);
+		}
+		return entries;
+	})();
 </script>
 
 {#if history && history.length > 0}
@@ -31,12 +53,12 @@
 		<div class="text-sm flex flex-col w-full">
 			{#if showHistory}
 				<div class="flex flex-row">
-					{#if history.length > 1}
+					{#if displayHistory.length > 1}
 						<div class="w-1 border-r border-gray-50 dark:border-gray-800 mt-3 -mb-2.5" />
 
 						<div class="w-full -translate-x-[7.5px]">
-							{#each history as status, idx}
-								{#if idx !== history.length - 1}
+							{#each displayHistory as status, idx}
+								{#if idx !== displayHistory.length - 1}
 									<div class="flex items-start gap-2 mb-1">
 										<div class="pt-3 px-1">
 											<span class="relative flex size-2">

@@ -5,8 +5,21 @@
 	import Search from '$lib/components/icons/Search.svelte';
 	import { t } from 'i18next';
 
-	export let status = null;
-	export let done = false;
+export let status = null;
+export let done = false;
+
+let queueWaitTime = null;
+
+$: queueWaitTime = (() => {
+	if (status?.wait_time === undefined || status?.wait_time === null) {
+		return null;
+	}
+	const parsed = Number(status.wait_time);
+	if (!Number.isFinite(parsed)) {
+		return null;
+	}
+	return Math.max(0, Math.round(parsed));
+})();
 </script>
 
 {#if !status?.hidden}
@@ -124,16 +137,25 @@
 			</div>
 		{:else}
 			<div class="flex flex-col justify-center -space-y-0.5">
-				<div
-					class="{(done || status?.done) === false
-						? 'shimmer'
-						: ''} text-gray-500 dark:text-gray-500 text-base line-clamp-1 text-wrap"
-				>
-					<!-- $i18n.t(`Searching "{{searchQuery}}"`) -->
-					{#if status?.description?.includes('{{searchQuery}}')}
-						{$i18n.t(status?.description, {
-							searchQuery: status?.query
-						})}
+				{#if queueWaitTime !== null}
+					<div
+						class="{(done || status?.done) === false
+							? 'shimmer'
+							: ''} text-gray-500 dark:text-gray-500 text-base font-medium text-nowrap"
+					>
+						in queue {queueWaitTime}s
+					</div>
+				{:else}
+					<div
+						class="{(done || status?.done) === false
+							? 'shimmer'
+							: ''} text-gray-500 dark:text-gray-500 text-base line-clamp-1 text-wrap"
+					>
+						<!-- $i18n.t(`Searching "{{searchQuery}}"`) -->
+						{#if status?.description?.includes('{{searchQuery}}')}
+							{$i18n.t(status?.description, {
+								searchQuery: status?.query
+							})}
 					{:else if status?.description === 'No search query generated'}
 						{$i18n.t('No search query generated')}
 					{:else if status?.description === 'Generating search query'}
@@ -143,7 +165,8 @@
 					{:else}
 						{status?.description}
 					{/if}
-				</div>
+					</div>
+				{/if}
 			</div>
 		{/if}
 	</div>

@@ -103,20 +103,7 @@
 	};
 
 	const oauthCallbackHandler = async () => {
-		// Get the value of the 'token' cookie
-		function getCookie(name) {
-			const match = document.cookie.match(
-				new RegExp('(?:^|; )' + name.replace(/([.$?*|{}()[\]\\/+^])/g, '\\$1') + '=([^;]*)')
-			);
-			return match ? decodeURIComponent(match[1]) : null;
-		}
-
-		const token = getCookie('token');
-		if (!token) {
-			return;
-		}
-
-		const sessionUser = await getSessionUser(token).catch((error) => {
+		const sessionUser = await getSessionUser().catch((error) => {
 			toast.error(`${error}`);
 			return null;
 		});
@@ -125,7 +112,9 @@
 			return;
 		}
 
-		setAccessToken(token);
+		if (sessionUser.token) {
+			setAccessToken(sessionUser.token);
+		}
 		await setSessionUser(sessionUser, localStorage.getItem('redirectPath') || null);
 	};
 

@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { knowledge, prompts } from '$lib/stores';
 
-	import { removeLastWordFromString } from '$lib/utils';
 	import { getPrompts } from '$lib/apis/prompts';
 	import { getKnowledgeBases } from '$lib/apis/knowledge';
 

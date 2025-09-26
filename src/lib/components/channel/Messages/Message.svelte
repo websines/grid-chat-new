@@ -34,10 +34,12 @@
 	import ChevronRight from '$lib/components/icons/ChevronRight.svelte';
 	import { formatDate } from '$lib/utils';
 	import Emoji from '$lib/components/common/Emoji.svelte';
+	import Skeleton from '$lib/components/chat/Messages/Skeleton.svelte';
 
 	export let message;
 	export let showUserProfile = true;
 	export let thread = false;
+	export let disabled = false;
 
 	export let onDelete: Function = () => {};
 	export let onEdit: Function = () => {};
@@ -68,7 +70,7 @@
 			? 'max-w-full'
 			: 'max-w-5xl'} mx-auto group hover:bg-gray-300/5 dark:hover:bg-gray-700/5 transition relative"
 	>
-		{#if !edit}
+		{#if !edit && !disabled}
 			<div
 				class=" absolute {showButtons ? '' : 'invisible group-hover:visible'} right-1 -top-2 z-10"
 			>
@@ -253,12 +255,16 @@
 					</div>
 				{:else}
 					<div class=" min-w-full markdown-prose">
-						<Markdown
-							id={message.id}
-							content={message.content}
-						/>{#if message.created_at !== message.updated_at}<span class="text-gray-500 text-[10px]"
+						{#if (message?.content ?? '').trim() === '' && message?.meta?.model_id}
+							<Skeleton />
+						{:else}
+							<Markdown
+								id={message.id}
+								content={message.content}
+							/>{#if message.created_at !== message.updated_at && (message?.meta?.model_id ?? null) === null}<span class="text-gray-500 text-[10px]"
 								>(edited)</span
-							>{/if}
+							{/if}
+						{/if}
 					</div>
 
 					{#if (message?.reactions ?? []).length > 0}

@@ -54,6 +54,7 @@ from open_webui.config import (
     WEBHOOK_URL,
     JWT_EXPIRES_IN,
     AppConfig,
+    OPENID_PROVIDER_URL,
 )
 from open_webui.constants import ERROR_MESSAGES, WEBHOOK_MESSAGES
 from open_webui.env import (
@@ -719,6 +720,26 @@ class OAuthManager:
                 return None
 
             server_metadata_url = self.get_server_metadata_url(provider)
+
+            if not server_metadata_url and provider == "oidc":
+                server_metadata_url = OPENID_PROVIDER_URL.value
+
+            if not server_metadata_url:
+                log.error(
+                    f"No server metadata URL available for provider {provider}"
+                )
+                return None
+
+            if not isinstance(server_metadata_url, str):
+                try:
+                    server_metadata_url = str(server_metadata_url)
+                except Exception as e:
+                    log.error(
+                        "Unable to coerce server metadata URL to string for provider"
+                        f" {provider}: {e}"
+                    )
+                    return None
+
             token_endpoint = None
             async with aiohttp.ClientSession(trust_env=True) as session_http:
                 async with session_http.get(server_metadata_url) as r:
@@ -732,6 +753,16 @@ class OAuthManager:
             if not token_endpoint:
                 log.error(f"No token endpoint found for provider {provider}")
                 return None
+
+            if not isinstance(token_endpoint, str):
+                try:
+                    token_endpoint = str(token_endpoint)
+                except Exception as e:
+                    log.error(
+                        "Unable to coerce token endpoint to string for provider"
+                        f" {provider}: {e}"
+                    )
+                    return None
 
             # Prepare refresh request
             refresh_data = {

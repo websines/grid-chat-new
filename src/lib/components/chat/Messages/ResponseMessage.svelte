@@ -4,7 +4,7 @@
 	import dayjs from 'dayjs';
 
 	import { createEventDispatcher } from 'svelte';
-	import { onMount, tick, getContext } from 'svelte';
+	import { onMount, onDestroy, tick, getContext } from 'svelte';
 	import type { Writable } from 'svelte/store';
 	import type { i18n as i18nType, t } from 'i18next';
 
@@ -166,6 +166,10 @@
 let generatingImage = false;
 let imageStyles: { id: string; name: string }[] = [];
 let selectedImageStyle: string = '';
+let showImageStyleDropdown = false;
+
+// Click outside handler for dropdown
+let handleClickOutside: (event: MouseEvent) => void;
 
 // Persist per-message image style selection so composer/chat can reuse it
 $: (() => {
@@ -194,6 +198,23 @@ onMount(async () => {
     } catch (e) {
         console.debug('image styles fetch error', e);
     }
+
+    // Add click outside listener to close dropdown
+    handleClickOutside = (event: MouseEvent) => {
+        const target = event.target as HTMLElement;
+        const imageButton = target.closest('[aria-label="Generate Image"]');
+        const dropdown = target.closest('.flex.items-center.ml-1');
+
+        if (!imageButton && !dropdown && showImageStyleDropdown) {
+            showImageStyleDropdown = false;
+        }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+});
+
+onDestroy(() => {
+    document.removeEventListener('click', handleClickOutside);
 });
 
 	let showRateComment = false;
@@ -1119,7 +1140,7 @@ onMount(async () => {
 												: 'invisible group-hover:visible'}  p-1.5 hover:bg-black/5 dark:hover:bg-white/5 rounded-lg dark:hover:text-white hover:text-black transition"
 											on:click={() => {
 												if (!generatingImage) {
-													generateImage(message);
+													showImageStyleDropdown = !showImageStyleDropdown;
 												}
 											}}
 										>
@@ -1175,16 +1196,34 @@ onMount(async () => {
 											{/if}
 										</button>
 									</Tooltip>
-									{#if imageStyles && imageStyles.length > 0}
-										<select
-											bind:value={selectedImageStyle}
-											class="ml-1 text-[10px] px-1 py-0.5 rounded bg-transparent border border-gray-100 dark:border-gray-800 text-gray-600 dark:text-gray-300"
-											aria-label={$i18n.t('Select image style')}
-										>
-											{#each imageStyles as s}
-												<option value={s.id}>{s.name}</option>
-											{/each}
-										</select>
+									{#if showImageStyleDropdown && imageStyles && imageStyles.length > 0}
+										<div class="flex items-center ml-1">
+											<select
+												bind:value={selectedImageStyle}
+												class="text-[10px] px-1 py-0.5 rounded bg-transparent border border-gray-100 dark:border-gray-800 text-gray-600 dark:text-gray-300"
+												aria-label={$i18n.t('Select image style')}
+											>
+												{#each imageStyles as s}
+													<option value={s.id}>{s.name}</option>
+												{/each}
+											</select>
+											<button
+												aria-label={$i18n.t('Generate')}
+												class="ml-1 text-[10px] px-1 py-0.5 rounded bg-blue-500 text-white hover:bg-blue-600 transition"
+												on:click={() => {
+													if (!generatingImage) {
+														generateImage(message);
+														showImageStyleDropdown = false;
+													}
+												}}
+											>
+												{#if generatingImage}
+													...
+												{:else}
+													Generate
+												{/if}
+											</button>
+										</div>
 									{/if}
 
 									<!-- Show Grid queue wait time if available on attached images -->

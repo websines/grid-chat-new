@@ -36,6 +36,8 @@
 	let confirmPassword = '';
 
 	let ldapUsername = '';
+	let oidcSignupUrl: string | undefined;
+	let oidcProviderName = 'SSO';
 
 	const setSessionUser = async (sessionUser, redirectPath: string | null = null) => {
 		if (sessionUser) {
@@ -119,6 +121,12 @@
 	};
 
 	let onboarding = false;
+
+	$: oidcSignupUrl = $config?.oauth?.signup_urls?.oidc;
+	$: oidcProviderName =
+		(typeof $config?.oauth?.providers?.oidc === 'string'
+			? $config?.oauth?.providers?.oidc
+			: undefined) ?? 'SSO';
 
 	async function setLogoImage() {
 		await tick();
@@ -508,10 +516,23 @@
 
 											<span
 												>{$i18n.t('Continue with {{provider}}', {
-													provider: $config?.oauth?.providers?.oidc ?? 'SSO'
+													provider: oidcProviderName
 												})}</span
 											>
 										</button>
+
+										{#if oidcSignupUrl}
+											<a
+												class="text-xs text-center text-gray-500 dark:text-gray-400 hover:underline"
+												href={oidcSignupUrl}
+												target="_blank"
+												rel="noreferrer"
+											>
+												{$i18n.t('Create a new {{provider}} account', {
+													provider: oidcProviderName
+												})}
+											</a>
+										{/if}
 									{/if}
 									{#if $config?.oauth?.providers?.feishu}
 										<button

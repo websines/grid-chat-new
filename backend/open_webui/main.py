@@ -1718,9 +1718,14 @@ async def get_app_config(request: Request):
         "default_locale": str(DEFAULT_LOCALE),
         "oauth": {
             "providers": {
-                name: config.get("name", name)
-                for name, config in OAUTH_PROVIDERS.items()
-            }
+                name: provider_config.get("name", name)
+                for name, provider_config in OAUTH_PROVIDERS.items()
+            },
+            "signup_urls": {
+                name: provider_config.get("signup_url")
+                for name, provider_config in OAUTH_PROVIDERS.items()
+                if provider_config.get("signup_url")
+            },
         },
         "features": {
             "auth": WEBUI_AUTH,

@@ -478,6 +478,12 @@ OAUTH_CODE_CHALLENGE_METHOD = PersistentConfig(
     os.environ.get("OAUTH_CODE_CHALLENGE_METHOD", None),
 )
 
+OPENID_SIGNUP_URL = PersistentConfig(
+    "OPENID_SIGNUP_URL",
+    "oauth.oidc.signup_url",
+    os.environ.get("OPENID_SIGNUP_URL", ""),
+)
+
 OAUTH_PROVIDER_NAME = PersistentConfig(
     "OAUTH_PROVIDER_NAME",
     "oauth.oidc.provider_name",
@@ -725,11 +731,16 @@ def load_oauth_providers():
                 redirect_uri=OPENID_REDIRECT_URI.value,
             )
 
-        OAUTH_PROVIDERS["oidc"] = {
+        oidc_provider_config = {
             "name": OAUTH_PROVIDER_NAME.value,
             "redirect_uri": OPENID_REDIRECT_URI.value,
             "register": oidc_oauth_register,
         }
+
+        if OPENID_SIGNUP_URL.value:
+            oidc_provider_config["signup_url"] = OPENID_SIGNUP_URL.value
+
+        OAUTH_PROVIDERS["oidc"] = oidc_provider_config
 
     if FEISHU_CLIENT_ID.value and FEISHU_CLIENT_SECRET.value:
 

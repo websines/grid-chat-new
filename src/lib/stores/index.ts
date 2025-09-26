@@ -265,6 +265,9 @@ type Config = {
 		providers: {
 			[key: string]: string;
 		};
+		signup_urls?: {
+			[key: string]: string;
+		};
 	};
 	ui?: {
 		pending_user_overlay_title?: string;

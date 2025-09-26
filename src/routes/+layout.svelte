@@ -71,13 +71,17 @@
 	const BREAKPOINT = 768;
 
 	const setupSocket = async (enableWebsocket) => {
+		const transports = enableWebsocket ? ['websocket', 'polling'] : ['polling'];
+
 		const _socket = io(`${WEBUI_BASE_URL}` || undefined, {
 			reconnection: true,
 			reconnectionDelay: 1000,
 			reconnectionDelayMax: 5000,
 			randomizationFactor: 0.5,
 			path: '/ws/socket.io',
-			transports: enableWebsocket ? ['websocket'] : ['polling', 'websocket'],
+			transports,
+			upgrade: enableWebsocket,
+			withCredentials: true,
 			auth: { token: getAccessToken() }
 		});
 

@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { v4 as uuidv4 } from 'uuid';
 	import { toast } from 'svelte-sonner';
-	import mermaid from 'mermaid';
 	import { PaneGroup, Pane, PaneResizer } from 'paneforge';
 
 	import { getContext, onDestroy, onMount, tick } from 'svelte';
@@ -37,6 +36,7 @@
 		showArtifacts,
 		tools,
 		toolServers,
+		functions,
 		selectedFolder,
 		pinnedChats
 	} from '$lib/stores';
@@ -88,6 +88,8 @@
 	import Spinner from '../common/Spinner.svelte';
 	import Tooltip from '../common/Tooltip.svelte';
 	import Sidebar from '../icons/Sidebar.svelte';
+	import { getFunctions } from '$lib/apis/functions';
+	import Image from '../common/Image.svelte';
 
 	export let chatIdProp = '';
 
@@ -237,33 +239,58 @@ let selectedImageStyleComposer = '';
 	};
 
 	const resetInput = () => {
-		console.debug('resetInput');
-		setToolIds();
-
+		selectedToolIds = [];
 		selectedFilterIds = [];
 		webSearchEnabled = false;
 		imageGenerationEnabled = false;
 		codeInterpreterEnabled = false;
+
+		setDefaults();
 	};
 
-	const setToolIds = async () => {
+	const setDefaults = async () => {
 		if (!$tools) {
 			tools.set(await getTools(localStorage.token));
 		}
-
+		if (!$functions) {
+			functions.set(await getFunctions(localStorage.token));
+		}
 		if (selectedModels.length !== 1 && !atSelectedModel) {
 			return;
 		}
 
 		const model = atSelectedModel ?? $models.find((m) => m.id === selectedModels[0]);
-		if (model && model?.info?.meta?.toolIds) {
-			selectedToolIds = [
-				...new Set(
-					[...(model?.info?.meta?.toolIds ?? [])].filter((id) => $tools.find((t) => t.id === id))
-				)
-			];
-		} else {
-			selectedToolIds = [];
+		if (model) {
+			// Set Default Tools
+			if (model?.info?.meta?.toolIds) {
+				selectedToolIds = [
+					...new Set(
+						[...(model?.info?.meta?.toolIds ?? [])].filter((id) => $tools.find((t) => t.id === id))
+					)
+				];
+			}
+
+			// Set Default Filters (Toggleable only)
+			if (model?.info?.meta?.defaultFilterIds) {
+				selectedFilterIds = model.info.meta.defaultFilterIds.filter((id) =>
+					model?.filters?.find((f) => f.id === id)
+				);
+			}
+
+			// Set Default Features
+			if (model?.info?.meta?.defaultFeatureIds) {
+				if (model.info?.meta?.capabilities?.['image_generation']) {
+					imageGenerationEnabled = model.info.meta.defaultFeatureIds.includes('image_generation');
+				}
+
+				if (model.info?.meta?.capabilities?.['web_search']) {
+					webSearchEnabled = model.info.meta.defaultFeatureIds.includes('web_search');
+				}
+
+				if (model.info?.meta?.capabilities?.['code_interpreter']) {
+					codeInterpreterEnabled = model.info.meta.defaultFeatureIds.includes('code_interpreter');
+				}
+			}
 		}
 	};
 
@@ -439,6 +466,15 @@ let selectedImageStyleComposer = '';
 			return;
 		}
 
+		if (event.data.type === 'action:submit') {
+			console.debug(event.data.text);
+
+			if (prompt !== '') {
+				await tick();
+				submitPrompt(prompt);
+			}
+		}
+
 		// Replace with your iframe's origin
 		if (event.data.type === 'input:prompt') {
 			console.debug(event.data.text);
@@ -448,15 +484,6 @@ let selectedImageStyleComposer = '';
 			if (inputElement) {
 				messageInput?.setText(event.data.text);
 				inputElement.focus();
-			}
-		}
-
-		if (event.data.type === 'action:submit') {
-			console.debug(event.data.text);
-
-			if (prompt !== '') {
-				await tick();
-				submitPrompt(prompt);
 			}
 		}
 
@@ -1006,7 +1033,7 @@ let selectedImageStyleComposer = '';
 		const res = await chatCompleted(localStorage.token, {
 			model: modelId,
 			messages: messages.map((m) => ({
-				id: m.id,
+			id: m.id,
 				role: m.role,
 				content: m.content,
 				info: m.info ? m.info : undefined,
@@ -1068,7 +1095,7 @@ let selectedImageStyleComposer = '';
 		const res = await chatAction(localStorage.token, actionId, {
 			model: modelId,
 			messages: messages.map((m) => ({
-				id: m.id,
+			id: m.id,
 				role: m.role,
 				content: m.content,
 				info: m.info ? m.info : undefined,
@@ -1140,7 +1167,7 @@ let selectedImageStyleComposer = '';
 			const responseMessageId = uuidv4();
 
 			const userMessage = {
-				id: userMessageId,
+			id: userMessageId,
 				parentId: parentMessage ? parentMessage.id : null,
 				childrenIds: [responseMessageId],
 				role: 'user',
@@ -1149,7 +1176,7 @@ let selectedImageStyleComposer = '';
 			};
 
 			const responseMessage = {
-				id: responseMessageId,
+			id: responseMessageId,
 				parentId: userMessageId,
 				childrenIds: [],
 				role: 'assistant',
@@ -1465,19 +1492,13 @@ let selectedImageStyleComposer = '';
 		prompt = '';
 
 		const messages = createMessagesList(history, history.currentId);
-
-		// Reset chat input textarea
-		if (!($settings?.richTextInput ?? true)) {
-			const chatInputElement = document.getElementById('chat-input');
-
-			if (chatInputElement) {
-				await tick();
-				chatInputElement.style.height = '';
-			}
-		}
-
 		const _files = JSON.parse(JSON.stringify(files));
-		chatFiles.push(..._files.filter((item) => ['doc', 'file', 'collection'].includes(item.type)));
+
+		chatFiles.push(
+			..._files.filter((item) =>
+				['doc', 'text', 'file', 'note', 'chat', 'collection'].includes(item.type)
+			)
+		);
 		chatFiles = chatFiles.filter(
 			// Remove duplicates
 			(item, index, array) =>
@@ -1680,7 +1701,7 @@ let selectedImageStyleComposer = '';
 				(model) => $models.find((m) => m.id === model)?.info?.meta?.capabilities?.web_search ?? true
 			).length === currentModels.length
 		) {
-			if (($settings?.webSearch ?? false) === 'always') {
+			if ($config?.features?.enable_web_search && ($settings?.webSearch ?? false) === 'always') {
 				features = { ...features, web_search: true };
 			}
 		}
@@ -1709,7 +1730,7 @@ let selectedImageStyleComposer = '';
 		let files = JSON.parse(JSON.stringify(chatFiles));
 		files.push(
 			...(userMessage?.files ?? []).filter((item) =>
-				['doc', 'text', 'file', 'note', 'collection'].includes(item.type)
+				['doc', 'text', 'file', 'note', 'chat', 'collection'].includes(item.type)
 			)
 		);
 		// Remove duplicates
@@ -1782,41 +1803,64 @@ let selectedImageStyleComposer = '';
 			}))
 			.filter((message) => message?.role === 'user' || message?.content?.trim());
 
-        const res = await generateOpenAIChatCompletion(
-            localStorage.token,
-            {
-                stream: stream,
-                model: model.id,
-                messages: messages,
-                params: {
+		const toolIds = []
+		const toolServerIds = []
+
+		for (const toolId of selectedToolIds) {
+			if (toolId.startsWith('direct_server:')) {
+				let serverId = toolId.replace('direct_server:', '');
+				// Check if serverId is a number
+				if (!isNaN(parseInt(serverId))) {
+					toolServerIds.push(parseInt(serverId));
+				} else {
+					toolServerIds.push(serverId);
+				}
+			} else {
+				toolIds.push(toolId);
+			}
+		}
+
+		const resolvedToolServers =
+			toolServerIds.length > 0
+				? ($toolServers ?? []).filter((server, idx) =>
+					toolServerIds.includes(idx) || toolServerIds.includes(server?.id)
+				)
+				: $toolServers;
+
+		const res = await generateOpenAIChatCompletion(
+			localStorage.token,
+			{
+				stream: stream,
+				model: model.id,
+				messages: messages,
+				params: {
 					...$settings?.params,
 					...params,
 					stop:
 						(params?.stop ?? $settings?.params?.stop ?? undefined)
 							? (params?.stop.split(',').map((token) => token.trim()) ?? $settings.params.stop).map(
-									(str) => decodeURIComponent(JSON.parse('"' + str.replace(/\"/g, '\\"') + '"'))
-								)
-							: undefined
+								(str) => decodeURIComponent(JSON.parse('"' + str.replace(/\"/g, '\\"') + '"'))
+							)
+						: undefined
 				},
 
 				files: (files?.length ?? 0) > 0 ? files : undefined,
 
 				filter_ids: selectedFilterIds.length > 0 ? selectedFilterIds : undefined,
-				tool_ids: selectedToolIds.length > 0 ? selectedToolIds : undefined,
-				tool_servers: $toolServers,
-                features: getFeatures(),
-                // Also send image_style at top-level to ensure backend has it
-                ...(imageGenerationEnabled && getEffectiveImageStyle()
-                    ? { image_style: getEffectiveImageStyle() }
-                    : {}),
-                variables: {
-                    ...getPromptVariables($user?.name, $settings?.userLocation ? userLocation : undefined)
-                },
-                model_item: $models.find((m) => m.id === model.id),
+				ool_ids: toolIds.length > 0 ? toolIds : undefined,
+				ool_servers: resolvedToolServers,
+				features: getFeatures(),
+				...(imageGenerationEnabled && getEffectiveImageStyle()
+					? { image_style: getEffectiveImageStyle() }
+					: {}),
+				variables: {
+					...getPromptVariables($user?.name, $settings?.userLocation ? userLocation : undefined)
+				},
+				model_item: $models.find((m) => m.id === model.id),
 
-                session_id: $socket?.id,
-                chat_id: $chatId,
-				id: responseMessageId,
+			session_id: $socket?.id,
+			chat_id: $chatId,
+			id: responseMessageId,
 
 				background_tasks: {
 					...(!$temporaryChatEnabled &&
@@ -2242,7 +2286,18 @@ let selectedImageStyleComposer = '';
 >
 	{#if !loading}
 		<div in:fade={{ duration: 50 }} class="w-full h-full flex flex-col">
-			{#if $settings?.backgroundImageUrl ?? $config?.license_metadata?.background_image_url ?? null}
+			{#if $selectedFolder && $selectedFolder?.meta?.background_image_url}
+				<div
+					class="absolute {$showSidebar
+						? 'md:max-w-[calc(100%-260px)] md:translate-x-[260px]'
+						: ''} top-0 left-0 w-full h-full bg-cover bg-center bg-no-repeat"
+					style="background-image: url({$selectedFolder?.meta?.background_image_url})  "
+				/>
+
+				<div
+					class="absolute top-0 left-0 w-full h-full bg-linear-to-t from-white to-white/85 dark:from-gray-900 dark:to-gray-900/90 z-0"
+				/>
+			{:else if $settings?.backgroundImageUrl ?? $config?.license_metadata?.background_image_url ?? null}
 				<div
 					class="absolute {$showSidebar
 						? 'md:max-w-[calc(100%-260px)] md:translate-x-[260px]'
@@ -2257,7 +2312,7 @@ let selectedImageStyleComposer = '';
 			{/if}
 
 			<PaneGroup direction="horizontal" class="w-full h-full">
-				<Pane defaultSize={50} class="h-full flex relative max-w-full flex-col">
+				<Pane defaultSize={50} minSize={30} class="h-full flex relative max-w-full flex-col">
 					<Navbar
 						bind:this={navbarElement}
 						chat={{
@@ -2276,7 +2331,6 @@ let selectedImageStyleComposer = '';
 						bind:selectedModels
 						shareEnabled={!!history.currentId}
 						{initNewChat}
-						showBanners={!showCommands}
 						archiveChatHandler={() => {}}
 						{moveChatHandler}
 						onSaveTempChat={async () => {
@@ -2397,11 +2451,7 @@ let selectedImageStyleComposer = '';
 										if (e.detail || files.length > 0) {
 											await tick();
 
-											submitPrompt(
-												($settings?.richTextInput ?? true)
-													? e.detail.replaceAll('\n\n', '\n')
-													: e.detail
-											);
+											submitPrompt(e.detail.replaceAll('\n\n', '\n'));
 										}
 									}}
 								/>
@@ -2450,11 +2500,7 @@ let selectedImageStyleComposer = '';
 										clearDraft();
 										if (e.detail || files.length > 0) {
 											await tick();
-											submitPrompt(
-												($settings?.richTextInput ?? true)
-													? e.detail.replaceAll('\n\n', '\n')
-													: e.detail
-											);
+											submitPrompt(e.detail.replaceAll('\n\n', '\n'));
 										}
 									}}
 								/>

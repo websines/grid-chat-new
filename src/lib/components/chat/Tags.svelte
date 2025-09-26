@@ -1,4 +1,5 @@
 <script>
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import {
 		addTagById,
 		deleteTagById,
@@ -26,13 +27,13 @@
 	let tags = [];
 
 	const getTags = async () => {
-		return await getTagsById(localStorage.token, chatId).catch(async (error) => {
+		return await getTagsById(getAccessToken(), chatId).catch(async (error) => {
 			return [];
 		});
 	};
 
 	const addTag = async (tagName) => {
-		const res = await addTagById(localStorage.token, chatId, tagName).catch(async (error) => {
+		const res = await addTagById(getAccessToken(), chatId, tagName).catch(async (error) => {
 			toast.error(`${error}`);
 			return null;
 		});
@@ -41,24 +42,24 @@
 		}
 
 		tags = await getTags();
-		await updateChatById(localStorage.token, chatId, {
+		await updateChatById(getAccessToken(), chatId, {
 			tags: tags
 		});
 
-		await _tags.set(await getAllTags(localStorage.token));
+		await _tags.set(await getAllTags(getAccessToken()));
 		dispatch('add', {
 			name: tagName
 		});
 	};
 
 	const deleteTag = async (tagName) => {
-		const res = await deleteTagById(localStorage.token, chatId, tagName);
+		const res = await deleteTagById(getAccessToken(), chatId, tagName);
 		tags = await getTags();
-		await updateChatById(localStorage.token, chatId, {
+		await updateChatById(getAccessToken(), chatId, {
 			tags: tags
 		});
 
-		await _tags.set(await getAllTags(localStorage.token));
+		await _tags.set(await getAllTags(getAccessToken()));
 		dispatch('delete', {
 			name: tagName
 		});

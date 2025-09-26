@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { toast } from 'svelte-sonner';
 
 	import { createEventDispatcher, onMount, getContext } from 'svelte';
@@ -100,14 +101,14 @@
 	];
 
 	const getModels = async () => {
-		models = await getImageGenerationModels(localStorage.token).catch((error) => {
+		models = await getImageGenerationModels(getAccessToken()).catch((error) => {
 			toast.error(`${error}`);
 			return null;
 		});
 	};
 
 	const updateConfigHandler = async () => {
-		const res = await updateConfig(localStorage.token, config)
+		const res = await updateConfig(getAccessToken(), config)
 			.catch((error) => {
 				toast.error(`${error}`);
 				return null;
@@ -160,13 +161,13 @@
 			});
 		}
 
-		await updateConfig(localStorage.token, config).catch((error) => {
+		await updateConfig(getAccessToken(), config).catch((error) => {
 			toast.error(`${error}`);
 			loading = false;
 			return null;
 		});
 
-		await updateImageGenerationConfig(localStorage.token, imageGenerationConfig).catch((error) => {
+		await updateImageGenerationConfig(getAccessToken(), imageGenerationConfig).catch((error) => {
 			toast.error(`${error}`);
 			loading = false;
 			return null;
@@ -179,7 +180,7 @@
 
 	onMount(async () => {
 		if ($user?.role === 'admin') {
-			const res = await getConfig(localStorage.token).catch((error) => {
+			const res = await getConfig(getAccessToken()).catch((error) => {
 				toast.error(`${error}`);
 				return null;
 			});
@@ -216,7 +217,7 @@
 				};
 			});
 
-			const imageConfigRes = await getImageGenerationConfig(localStorage.token).catch((error) => {
+			const imageConfigRes = await getImageGenerationConfig(getAccessToken()).catch((error) => {
 				toast.error(`${error}`);
 				return null;
 			});
@@ -328,7 +329,7 @@
 								type="button"
 								on:click={async () => {
 									await updateConfigHandler();
-									const res = await verifyConfigUrl(localStorage.token).catch((error) => {
+									const res = await verifyConfigUrl(getAccessToken()).catch((error) => {
 										toast.error(`${error}`);
 										return null;
 									});
@@ -464,7 +465,7 @@
 								type="button"
 								on:click={async () => {
 									await updateConfigHandler();
-									const res = await verifyConfigUrl(localStorage.token).catch((error) => {
+									const res = await verifyConfigUrl(getAccessToken()).catch((error) => {
 										toast.error(`${error}`);
 										return null;
 									});

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { toast } from 'svelte-sonner';
 	import { getContext, onMount } from 'svelte';
 	const i18n = getContext('i18n');
@@ -53,7 +54,7 @@
 		// remove trailing slash from url
 		url = url.replace(/\/$/, '');
 
-		const res = await verifyOllamaConnection(localStorage.token, {
+		const res = await verifyOllamaConnection(getAccessToken(), {
 			url,
 			key
 		}).catch((error) => {
@@ -70,7 +71,7 @@
 		url = url.replace(/\/$/, '');
 
 		const res = await verifyOpenAIConnection(
-			localStorage.token,
+			getAccessToken(),
 			{
 				url,
 				key,

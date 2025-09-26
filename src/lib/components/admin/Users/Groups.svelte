@@ -1,4 +1,5 @@
 <script>
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { toast } from 'svelte-sonner';
 	import dayjs from 'dayjs';
 	import relativeTime from 'dayjs/plugin/relativeTime';
@@ -98,25 +99,25 @@
 	let showDefaultPermissionsModal = false;
 
 	const setGroups = async () => {
-		groups = await getGroups(localStorage.token);
+		groups = await getGroups(getAccessToken());
 	};
 
 	const addGroupHandler = async (group) => {
-		const res = await createNewGroup(localStorage.token, group).catch((error) => {
+		const res = await createNewGroup(getAccessToken(), group).catch((error) => {
 			toast.error(`${error}`);
 			return null;
 		});
 
 		if (res) {
 			toast.success($i18n.t('Group created successfully'));
-			groups = await getGroups(localStorage.token);
+			groups = await getGroups(getAccessToken());
 		}
 	};
 
 	const updateDefaultPermissionsHandler = async (group) => {
 		console.debug(group.permissions);
 
-		const res = await updateUserDefaultPermissions(localStorage.token, group.permissions).catch(
+		const res = await updateUserDefaultPermissions(getAccessToken(), group.permissions).catch(
 			(error) => {
 				toast.error(`${error}`);
 				return null;
@@ -125,7 +126,7 @@
 
 		if (res) {
 			toast.success($i18n.t('Default permissions updated successfully'));
-			defaultPermissions = await getUserDefaultPermissions(localStorage.token);
+			defaultPermissions = await getUserDefaultPermissions(getAccessToken());
 		}
 	};
 
@@ -135,7 +136,7 @@
 			return;
 		}
 
-		const res = await getAllUsers(localStorage.token).catch((error) => {
+		const res = await getAllUsers(getAccessToken()).catch((error) => {
 			toast.error(`${error}`);
 			return null;
 		});
@@ -146,7 +147,7 @@
 		}
 
 		await setGroups();
-		defaultPermissions = await getUserDefaultPermissions(localStorage.token);
+		defaultPermissions = await getUserDefaultPermissions(getAccessToken());
 
 		loaded = true;
 	});

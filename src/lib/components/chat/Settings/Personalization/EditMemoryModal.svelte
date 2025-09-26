@@ -1,4 +1,5 @@
 <script>
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { createEventDispatcher, getContext } from 'svelte';
 	import { toast } from 'svelte-sonner';
 
@@ -29,7 +30,7 @@
 	const submitHandler = async () => {
 		loading = true;
 
-		const res = await updateMemoryById(localStorage.token, memory.id, content).catch((error) => {
+		const res = await updateMemoryById(getAccessToken(), memory.id, content).catch((error) => {
 			toast.error(`${error}`);
 
 			return null;

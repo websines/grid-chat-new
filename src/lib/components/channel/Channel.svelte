@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { toast } from 'svelte-sonner';
 	import { Pane, PaneGroup, PaneResizer } from 'paneforge';
 
@@ -50,12 +51,12 @@
 		typingUsers = [];
 		typingUsersTimeout = {};
 
-		channel = await getChannelById(localStorage.token, id).catch((error) => {
+		channel = await getChannelById(getAccessToken(), id).catch((error) => {
 			return null;
 		});
 
 		if (channel) {
-			messages = await getChannelMessages(localStorage.token, id, 0);
+			messages = await getChannelMessages(getAccessToken(), id, 0);
 
 			if (messages) {
 				scrollToBottom();
@@ -141,7 +142,7 @@
 			return;
 		}
 
-		const res = await sendMessage(localStorage.token, id, { content: content, data: data }).catch(
+		const res = await sendMessage(getAccessToken(), id, { content: content, data: data }).catch(
 			(error) => {
 				toast.error(`${error}`);
 				return null;
@@ -229,7 +230,7 @@
 								}}
 								onLoad={async () => {
 									const newMessages = await getChannelMessages(
-										localStorage.token,
+										getAccessToken(),
 										id,
 										messages.length
 									);

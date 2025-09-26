@@ -1,4 +1,5 @@
 <script>
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { WEBUI_BASE_URL } from '$lib/constants';
 	import { WEBUI_NAME, config, user, showSidebar } from '$lib/stores';
 	import { goto } from '$app/navigation';
@@ -54,7 +55,7 @@
 	let showEditUserModal = false;
 
 	const deleteUserHandler = async (id) => {
-		const res = await deleteUserById(localStorage.token, id).catch((error) => {
+		const res = await deleteUserById(getAccessToken(), id).catch((error) => {
 			toast.error(`${error}`);
 			return null;
 		});
@@ -80,7 +81,7 @@
 
 	const getUserList = async () => {
 		try {
-			const res = await getUsers(localStorage.token, query, orderBy, direction, page).catch(
+			const res = await getUsers(getAccessToken(), query, orderBy, direction, page).catch(
 				(error) => {
 					toast.error(`${error}`);
 					return null;

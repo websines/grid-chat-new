@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { toast } from 'svelte-sonner';
 
 	import { onMount, getContext, tick } from 'svelte';
@@ -217,9 +218,9 @@
 	};
 
 	onMount(async () => {
-		await tools.set(await getTools(localStorage.token));
-		await functions.set(await getFunctions(localStorage.token));
-		await knowledgeCollections.set([...(await getKnowledgeBases(localStorage.token))]);
+		await tools.set(await getTools(getAccessToken()));
+		await functions.set(await getFunctions(getAccessToken()));
+		await knowledgeCollections.set([...(await getKnowledgeBases(getAccessToken()))]);
 
 		// Scroll to top 'workspace-container' element
 		const workspaceContainer = document.getElementById('workspace-container');

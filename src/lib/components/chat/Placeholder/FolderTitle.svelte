@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { getContext } from 'svelte';
 	const i18n = getContext('i18n');
 
@@ -43,7 +44,7 @@
 		name = name.trim();
 		folder.name = name;
 
-		const res = await updateFolderById(localStorage.token, folder.id, {
+		const res = await updateFolderById(getAccessToken(), folder.id, {
 			name,
 			...(meta ? { meta } : {}),
 			...(data ? { data } : {})
@@ -67,7 +68,7 @@
 	};
 
 	const updateIconHandler = async (iconName) => {
-		const res = await updateFolderById(localStorage.token, folder.id, {
+		const res = await updateFolderById(getAccessToken(), folder.id, {
 			meta: {
 				icon: iconName
 			}
@@ -86,7 +87,7 @@
 	};
 
 	const deleteHandler = async () => {
-		const res = await deleteFolderById(localStorage.token, folder.id).catch((error) => {
+		const res = await deleteFolderById(getAccessToken(), folder.id).catch((error) => {
 			toast.error(`${error}`);
 			return null;
 		});
@@ -98,7 +99,7 @@
 	};
 
 	const exportHandler = async () => {
-		const chats = await getChatsByFolderId(localStorage.token, folder.id).catch((error) => {
+		const chats = await getChatsByFolderId(getAccessToken(), folder.id).catch((error) => {
 			toast.error(`${error}`);
 			return null;
 		});

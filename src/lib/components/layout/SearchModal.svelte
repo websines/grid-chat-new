@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { toast } from 'svelte-sonner';
 	import { getContext, onDestroy, onMount, tick } from 'svelte';
 	const i18n = getContext('i18n');
@@ -77,7 +78,7 @@
 
 		const chatId = chatList[selectedChatIdx].id;
 
-		const chat = await getChatById(localStorage.token, chatId).catch(async (error) => {
+		const chat = await getChatById(getAccessToken(), chatId).catch(async (error) => {
 			return null;
 		});
 
@@ -122,10 +123,10 @@
 		page = 1;
 		chatList = null;
 		if (query === '') {
-			chatList = await getChatList(localStorage.token, page);
+			chatList = await getChatList(getAccessToken(), page);
 		} else {
 			searchDebounceTimeout = setTimeout(async () => {
-				chatList = await getChatListBySearchText(localStorage.token, query, page);
+				chatList = await getChatListBySearchText(getAccessToken(), query, page);
 
 				if ((chatList ?? []).length === 0) {
 					allChatsLoaded = true;
@@ -154,9 +155,9 @@
 		let newChatList = [];
 
 		if (query) {
-			newChatList = await getChatListBySearchText(localStorage.token, query, page);
+			newChatList = await getChatListBySearchText(getAccessToken(), query, page);
 		} else {
-			newChatList = await getChatList(localStorage.token, page);
+			newChatList = await getChatList(getAccessToken(), page);
 		}
 
 		// once the bottom of the list has been reached (no results) there is no need to continue querying

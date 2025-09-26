@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { goto } from '$app/navigation';
 
 	import { socket, user } from '$lib/stores';
@@ -43,7 +44,7 @@
 		typingUsersTimeout = {};
 
 		if (channel) {
-			messages = await getChannelThreadMessages(localStorage.token, channel.id, threadId);
+			messages = await getChannelThreadMessages(getAccessToken(), channel.id, threadId);
 
 			if (messages.length < 50) {
 				top = true;
@@ -126,7 +127,7 @@
 			return;
 		}
 
-		const res = await sendMessage(localStorage.token, channel.id, {
+		const res = await sendMessage(getAccessToken(), channel.id, {
 			parent_id: threadId,
 			content: content,
 			data: data
@@ -185,7 +186,7 @@
 					thread={true}
 					onLoad={async () => {
 						const newMessages = await getChannelThreadMessages(
-							localStorage.token,
+							getAccessToken(),
 							channel.id,
 							threadId,
 							messages.length

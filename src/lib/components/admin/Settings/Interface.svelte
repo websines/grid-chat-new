@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import fileSaver from 'file-saver';
 	const { saveAs } = fileSaver;
 
@@ -48,17 +49,17 @@
 	let banners: Banner[] = [];
 
 	const updateInterfaceHandler = async () => {
-		taskConfig = await updateTaskConfig(localStorage.token, taskConfig);
+		taskConfig = await updateTaskConfig(getAccessToken(), taskConfig);
 
 		promptSuggestions = promptSuggestions.filter((p) => p.content !== '');
-		promptSuggestions = await setDefaultPromptSuggestions(localStorage.token, promptSuggestions);
+		promptSuggestions = await setDefaultPromptSuggestions(getAccessToken(), promptSuggestions);
 		await updateBanners();
 
 		await config.set(await getBackendConfig());
 	};
 
 	const updateBanners = async () => {
-		_banners.set(await setBanners(localStorage.token, banners));
+		_banners.set(await setBanners(getAccessToken(), banners));
 	};
 
 	let workspaceModels = null;
@@ -67,12 +68,12 @@
 	let models = null;
 
 	const init = async () => {
-		taskConfig = await getTaskConfig(localStorage.token);
+		taskConfig = await getTaskConfig(getAccessToken());
 		promptSuggestions = $config?.default_prompt_suggestions ?? [];
-		banners = await getBanners(localStorage.token);
+		banners = await getBanners(getAccessToken());
 
-		workspaceModels = await getBaseModels(localStorage.token);
-		baseModels = await getModels(localStorage.token, null, false);
+		workspaceModels = await getBaseModels(getAccessToken());
+		baseModels = await getModels(getAccessToken(), null, false);
 
 		models = baseModels.map((m) => {
 			const workspaceModel = workspaceModels.find((wm) => wm.id === m.id);

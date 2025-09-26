@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { getContext, onMount } from 'svelte';
 
 	const i18n = getContext('i18n');
@@ -41,7 +42,7 @@
 	};
 
 	onMount(async () => {
-		groups = await getGroups(localStorage.token);
+		groups = await getGroups(getAccessToken());
 
 		if (accessControl === null) {
 			initPublicAccess();

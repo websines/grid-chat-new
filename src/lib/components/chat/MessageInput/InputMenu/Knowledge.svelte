@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { onMount, tick, getContext } from 'svelte';
 
 	import { decodeString } from '$lib/utils';
@@ -21,7 +22,7 @@
 
 	onMount(async () => {
 		if ($knowledge === null) {
-			await knowledge.set(await getKnowledgeBases(localStorage.token));
+			await knowledge.set(await getKnowledgeBases(getAccessToken()));
 		}
 
 		let legacy_documents = $knowledge

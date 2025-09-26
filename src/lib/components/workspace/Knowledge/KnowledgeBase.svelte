@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import Fuse from 'fuse.js';
 	import { toast } from 'svelte-sonner';
 	import { v4 as uuidv4 } from 'uuid';
@@ -177,7 +178,7 @@
 				};
 			}
 
-			const uploadedFile = await uploadFile(localStorage.token, file, metadata).catch((e) => {
+			const uploadedFile = await uploadFile(getAccessToken(), file, metadata).catch((e) => {
 				toast.error(`${e}`);
 				return null;
 			});
@@ -383,7 +384,7 @@
 	// Helper function to maintain file paths within zip
 	const syncDirectoryHandler = async () => {
 		if ((knowledge?.files ?? []).length > 0) {
-			const res = await resetKnowledgeById(localStorage.token, id).catch((e) => {
+			const res = await resetKnowledgeById(getAccessToken(), id).catch((e) => {
 				toast.error(`${e}`);
 			});
 
@@ -400,7 +401,7 @@
 	};
 
 	const addFileHandler = async (fileId) => {
-		const updatedKnowledge = await addFileToKnowledgeById(localStorage.token, id, fileId).catch(
+		const updatedKnowledge = await addFileToKnowledgeById(getAccessToken(), id, fileId).catch(
 			(e) => {
 				toast.error(`${e}`);
 				return null;
@@ -421,7 +422,7 @@
 			console.log('Starting file deletion process for:', fileId);
 
 			// Remove from knowledge base only
-			const updatedKnowledge = await removeFileFromKnowledgeById(localStorage.token, id, fileId);
+			const updatedKnowledge = await removeFileFromKnowledgeById(getAccessToken(), id, fileId);
 
 			console.log('Knowledge base updated:', updatedKnowledge);
 
@@ -446,13 +447,13 @@
 			const content = selectedFileContent;
 			// Clear the cache for this file since we're updating it
 			fileContentCache.delete(fileId);
-			const res = await updateFileDataContentById(localStorage.token, fileId, content).catch(
+			const res = await updateFileDataContentById(getAccessToken(), fileId, content).catch(
 				(e) => {
 					toast.error(`${e}`);
 				}
 			);
 			const updatedKnowledge = await updateFileFromKnowledgeById(
-				localStorage.token,
+				getAccessToken(),
 				id,
 				fileId
 			).catch((e) => {
@@ -479,7 +480,7 @@
 				return;
 			}
 
-			const res = await updateKnowledgeById(localStorage.token, id, {
+			const res = await updateKnowledgeById(getAccessToken(), id, {
 				...knowledge,
 				name: knowledge.name,
 				description: knowledge.description,
@@ -490,7 +491,7 @@
 
 			if (res) {
 				toast.success($i18n.t('Knowledge updated successfully'));
-				_knowledge.set(await getKnowledgeBases(localStorage.token));
+				_knowledge.set(await getKnowledgeBases(getAccessToken()));
 			}
 		}, 1000);
 	};
@@ -513,7 +514,7 @@
 				return;
 			}
 
-			const response = await getFileById(localStorage.token, file.id);
+			const response = await getFileById(getAccessToken(), file.id);
 			if (response) {
 				selectedFileContent = response.data.content;
 				// Cache the content
@@ -599,7 +600,7 @@
 
 		id = $page.params.id;
 
-		const res = await getKnowledgeById(localStorage.token, id).catch((e) => {
+		const res = await getKnowledgeById(getAccessToken(), id).catch((e) => {
 			toast.error(`${e}`);
 			return null;
 		});

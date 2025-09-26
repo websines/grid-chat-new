@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { DropdownMenu } from 'bits-ui';
 	import { flyAndScale } from '$lib/utils/transitions';
 	import { getContext, createEventDispatcher, tick } from 'svelte';
@@ -50,12 +51,12 @@
 	let showFullMessages = false;
 
 	const pinHandler = async () => {
-		await toggleChatPinnedStatusById(localStorage.token, chatId);
+		await toggleChatPinnedStatusById(getAccessToken(), chatId);
 		dispatch('change');
 	};
 
 	const checkPinned = async () => {
-		pinned = await getChatPinnedStatusById(localStorage.token, chatId);
+		pinned = await getChatPinnedStatusById(getAccessToken(), chatId);
 	};
 
 	const getChatAsText = async (chat) => {
@@ -69,7 +70,7 @@
 	};
 
 	const downloadTxt = async () => {
-		const chat = await getChatById(localStorage.token, chatId);
+		const chat = await getChatById(getAccessToken(), chatId);
 		if (!chat) {
 			return;
 		}
@@ -83,7 +84,7 @@
 	};
 
 	const downloadPdf = async () => {
-		chat = await getChatById(localStorage.token, chatId);
+		chat = await getChatById(getAccessToken(), chatId);
 		if (!chat) {
 			return;
 		}
@@ -244,7 +245,7 @@
 	};
 
 	const downloadJSONExport = async () => {
-		const chat = await getChatById(localStorage.token, chatId);
+		const chat = await getChatById(getAccessToken(), chatId);
 
 		if (chat) {
 			let blob = new Blob([JSON.stringify([chat])], {

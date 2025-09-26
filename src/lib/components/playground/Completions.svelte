@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { toast } from 'svelte-sonner';
 
 	import { goto } from '$app/navigation';
@@ -40,7 +41,7 @@
 		const model = $models.find((model) => model.id === selectedModelId);
 
 		const [res, controller] = await chatCompletion(
-			localStorage.token,
+			getAccessToken(),
 			{
 				model: model.id,
 				stream: true,

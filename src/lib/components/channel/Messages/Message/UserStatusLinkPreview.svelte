@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { getContext, onMount } from 'svelte';
 	import { LinkPreview } from 'bits-ui';
 
@@ -17,7 +18,7 @@
 
 	onMount(async () => {
 		if (id) {
-			user = await getUserById(localStorage.token, id).catch((error) => {
+			user = await getUserById(getAccessToken(), id).catch((error) => {
 				console.error('Error fetching user by ID:', error);
 				return null;
 			});

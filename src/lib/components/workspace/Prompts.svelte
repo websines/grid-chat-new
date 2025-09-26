@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { toast } from 'svelte-sonner';
 	import fileSaver from 'file-saver';
 	const { saveAs } = fileSaver;
@@ -93,7 +94,7 @@
 	const deleteHandler = async (prompt) => {
 		const command = prompt.command;
 
-		const res = await deletePromptByCommand(localStorage.token, command).catch((err) => {
+		const res = await deletePromptByCommand(getAccessToken(), command).catch((err) => {
 			toast.error(err);
 			return null;
 		});
@@ -106,8 +107,8 @@
 	};
 
 	const init = async () => {
-		prompts = await getPromptList(localStorage.token);
-		await _prompts.set(await getPrompts(localStorage.token));
+		prompts = await getPromptList(getAccessToken());
+		await _prompts.set(await getPrompts(getAccessToken()));
 	};
 
 	onMount(async () => {
@@ -322,7 +323,7 @@
 							console.log(savedPrompts);
 
 							for (const prompt of savedPrompts) {
-								await createNewPrompt(localStorage.token, {
+								await createNewPrompt(getAccessToken(), {
 									command:
 										prompt.command.charAt(0) === '/' ? prompt.command.slice(1) : prompt.command,
 									title: prompt.title,
@@ -333,8 +334,8 @@
 								});
 							}
 
-							prompts = await getPromptList(localStorage.token);
-							await _prompts.set(await getPrompts(localStorage.token));
+							prompts = await getPromptList(getAccessToken());
+							await _prompts.set(await getPrompts(getAccessToken()));
 
 							importFiles = [];
 							promptsImportInputElement.value = '';

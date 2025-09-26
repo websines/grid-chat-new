@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { toast } from 'svelte-sonner';
 	import { getContext } from 'svelte';
 
@@ -55,7 +56,7 @@
 	};
 
 	const deleteHandler = async (chatId) => {
-		const res = await deleteChatById(localStorage.token, chatId).catch((error) => {
+		const res = await deleteChatById(getAccessToken(), chatId).catch((error) => {
 			toast.error(`${error}`);
 		});
 

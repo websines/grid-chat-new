@@ -1,4 +1,5 @@
 <script>
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { onMount } from 'svelte';
 	import { knowledge } from '$lib/stores';
 
@@ -8,7 +9,7 @@
 	onMount(async () => {
 		await Promise.all([
 			(async () => {
-				knowledge.set(await getKnowledgeBases(localStorage.token));
+				knowledge.set(await getKnowledgeBases(getAccessToken()));
 			})()
 		]);
 	});

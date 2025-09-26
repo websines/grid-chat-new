@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { toast } from 'svelte-sonner';
 	import { onMount, tick, getContext } from 'svelte';
 	import { openDB, deleteDB } from 'idb';
@@ -85,7 +86,7 @@
 				});
 			}
 
-			const userSettings = await getUserSettings(localStorage.token).catch((error) => {
+			const userSettings = await getUserSettings(getAccessToken()).catch((error) => {
 				console.error(error);
 				return null;
 			});
@@ -106,13 +107,13 @@
 
 			models.set(
 				await getModels(
-					localStorage.token,
+					getAccessToken(),
 					$config?.features?.enable_direct_connections && ($settings?.directConnections ?? null)
 				)
 			);
 
-			banners.set(await getBanners(localStorage.token));
-			tools.set(await getTools(localStorage.token));
+			banners.set(await getBanners(getAccessToken()));
+			tools.set(await getTools(getAccessToken()));
 
 			let toolServersData = await getToolServersData($settings?.toolServers ?? []);
 			toolServersData = toolServersData.filter((data) => {
@@ -261,7 +262,7 @@
 	});
 
 	const checkForVersionUpdates = async () => {
-		version = await getVersionUpdates(localStorage.token).catch((error) => {
+		version = await getVersionUpdates(getAccessToken()).catch((error) => {
 			return {
 				current: WEBUI_VERSION,
 				latest: WEBUI_VERSION

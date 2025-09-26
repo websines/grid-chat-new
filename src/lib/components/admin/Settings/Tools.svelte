@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { toast } from 'svelte-sonner';
 	import { createEventDispatcher, onMount, getContext, tick } from 'svelte';
 	import { getModels as _getModels } from '$lib/apis';
@@ -28,7 +29,7 @@
 	};
 
 	const updateHandler = async () => {
-		const res = await setToolServerConnections(localStorage.token, {
+		const res = await setToolServerConnections(getAccessToken(), {
 			TOOL_SERVER_CONNECTIONS: servers
 		}).catch((err) => {
 			toast.error($i18n.t('Failed to save connections'));
@@ -42,7 +43,7 @@
 	};
 
 	onMount(async () => {
-		const res = await getToolServerConnections(localStorage.token);
+		const res = await getToolServerConnections(getAccessToken());
 		servers = res.TOOL_SERVER_CONNECTIONS;
 	});
 </script>

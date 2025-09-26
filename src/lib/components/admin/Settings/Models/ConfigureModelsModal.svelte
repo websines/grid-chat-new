@@ -1,4 +1,5 @@
 <script>
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { toast } from 'svelte-sonner';
 
 	import { createEventDispatcher, getContext, onMount } from 'svelte';
@@ -58,7 +59,7 @@
 	};
 
 	const init = async () => {
-		config = await getModelsConfig(localStorage.token);
+		config = await getModelsConfig(getAccessToken());
 
 		if (config?.DEFAULT_MODELS) {
 			defaultModelIds = (config?.DEFAULT_MODELS).split(',').filter((id) => id);
@@ -84,7 +85,7 @@
 	const submitHandler = async () => {
 		loading = true;
 
-		const res = await setModelsConfig(localStorage.token, {
+		const res = await setModelsConfig(getAccessToken(), {
 			DEFAULT_MODELS: defaultModelIds.join(','),
 			MODEL_ORDER_LIST: modelIds
 		});
@@ -110,7 +111,7 @@
 	message={$i18n.t('This will delete all models including custom models and cannot be undone.')}
 	bind:show={showResetModal}
 	onConfirm={async () => {
-		const res = deleteAllModels(localStorage.token);
+		const res = deleteAllModels(getAccessToken());
 		if (res) {
 			toast.success($i18n.t('All models deleted successfully'));
 			initHandler();

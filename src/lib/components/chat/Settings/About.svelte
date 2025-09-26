@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { getVersionUpdates } from '$lib/apis';
 	import { getOllamaVersion } from '$lib/apis/ollama';
 	import { WEBUI_BUILD_HASH, WEBUI_VERSION } from '$lib/constants';
@@ -20,7 +21,7 @@
 
 	const checkForVersionUpdates = async () => {
 		updateAvailable = null;
-		version = await getVersionUpdates(localStorage.token).catch((error) => {
+		version = await getVersionUpdates(getAccessToken()).catch((error) => {
 			return {
 				current: WEBUI_VERSION,
 				latest: WEBUI_VERSION
@@ -34,7 +35,7 @@
 	};
 
 	onMount(async () => {
-		ollamaVersion = await getOllamaVersion(localStorage.token).catch((error) => {
+		ollamaVersion = await getOllamaVersion(getAccessToken()).catch((error) => {
 			return '';
 		});
 

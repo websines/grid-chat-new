@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { v4 as uuidv4 } from 'uuid';
 	import {
 		chats,
@@ -103,13 +104,13 @@
 		if (!$temporaryChatEnabled) {
 			history = history;
 			await tick();
-			await updateChatById(localStorage.token, chatId, {
+			await updateChatById(getAccessToken(), chatId, {
 				history: history,
 				messages: messages
 			});
 
 			currentChatPage.set(1);
-			await chats.set(await getChatList(localStorage.token, $currentChatPage));
+			await chats.set(await getChatList(getAccessToken(), $currentChatPage));
 		}
 	};
 

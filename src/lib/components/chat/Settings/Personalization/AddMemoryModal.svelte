@@ -1,4 +1,5 @@
 <script>
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { createEventDispatcher, getContext } from 'svelte';
 
 	import Modal from '$lib/components/common/Modal.svelte';
@@ -18,7 +19,7 @@
 	const submitHandler = async () => {
 		loading = true;
 
-		const res = await addNewMemory(localStorage.token, content).catch((error) => {
+		const res = await addNewMemory(getAccessToken(), content).catch((error) => {
 			toast.error(`${error}`);
 
 			return null;

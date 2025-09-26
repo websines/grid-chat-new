@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { toast } from 'svelte-sonner';
 	import { goto } from '$app/navigation';
 	import { prompts } from '$lib/stores';
@@ -14,14 +15,14 @@
 	let prompt = null;
 	const onSubmit = async (_prompt) => {
 		console.log(_prompt);
-		const prompt = await updatePromptByCommand(localStorage.token, _prompt).catch((error) => {
+		const prompt = await updatePromptByCommand(getAccessToken(), _prompt).catch((error) => {
 			toast.error(`${error}`);
 			return null;
 		});
 
 		if (prompt) {
 			toast.success($i18n.t('Prompt updated successfully'));
-			await prompts.set(await getPrompts(localStorage.token));
+			await prompts.set(await getPrompts(getAccessToken()));
 			await goto('/workspace/prompts');
 		}
 	};
@@ -30,7 +31,7 @@
 		const command = $page.url.searchParams.get('command');
 		if (command) {
 			const _prompt = await getPromptByCommand(
-				localStorage.token,
+				getAccessToken(),
 				command.replace(/\//g, '')
 			).catch((error) => {
 				toast.error(`${error}`);

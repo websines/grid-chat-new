@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { getAllTags } from '$lib/apis/chats';
 	import { folders, tags } from '$lib/stores';
 	import { getContext, createEventDispatcher, onMount, onDestroy, tick } from 'svelte';
@@ -188,7 +189,7 @@
 	const initTags = async () => {
 		loading = true;
 
-		await tags.set(await getAllTags(localStorage.token));
+		await tags.set(await getAllTags(getAccessToken()));
 		loading = false;
 	};
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { knowledge, prompts } from '$lib/stores';
 
 	import { getPrompts } from '$lib/apis/prompts';
@@ -27,10 +28,10 @@
 		loading = true;
 		await Promise.all([
 			(async () => {
-				prompts.set(await getPrompts(localStorage.token));
+				prompts.set(await getPrompts(getAccessToken()));
 			})(),
 			(async () => {
-				knowledge.set(await getKnowledgeBases(localStorage.token));
+				knowledge.set(await getKnowledgeBases(getAccessToken()));
 			})()
 		]);
 		loading = false;

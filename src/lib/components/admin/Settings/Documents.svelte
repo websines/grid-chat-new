@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { toast } from 'svelte-sonner';
 
 	import { onMount, getContext, createEventDispatcher } from 'svelte';
@@ -101,7 +102,7 @@
 		console.debug('Update embedding model attempt:', embeddingModel);
 
 		updateEmbeddingModelLoading = true;
-		const res = await updateEmbeddingConfig(localStorage.token, {
+		const res = await updateEmbeddingConfig(getAccessToken(), {
 			embedding_engine: embeddingEngine,
 			embedding_model: embeddingModel,
 			embedding_batch_size: embeddingBatchSize,
@@ -211,7 +212,7 @@
 			await embeddingModelUpdateHandler();
 		}
 
-		const res = await updateRAGConfig(localStorage.token, {
+		const res = await updateRAGConfig(getAccessToken(), {
 			...RAGConfig,
 			ALLOWED_FILE_EXTENSIONS: RAGConfig.ALLOWED_FILE_EXTENSIONS.split(',')
 				.map((ext) => ext.trim())
@@ -225,7 +226,7 @@
 	};
 
 	const setEmbeddingConfig = async () => {
-		const embeddingConfig = await getEmbeddingConfig(localStorage.token);
+		const embeddingConfig = await getEmbeddingConfig(getAccessToken());
 
 		if (embeddingConfig) {
 			embeddingEngine = embeddingConfig.embedding_engine;
@@ -246,7 +247,7 @@
 	onMount(async () => {
 		await setEmbeddingConfig();
 
-		const config = await getRAGConfig(localStorage.token);
+		const config = await getRAGConfig(getAccessToken());
 		config.ALLOWED_FILE_EXTENSIONS = (config?.ALLOWED_FILE_EXTENSIONS ?? []).join(', ');
 
 		config.DOCLING_PICTURE_DESCRIPTION_LOCAL = JSON.stringify(
@@ -267,7 +268,7 @@
 <ResetUploadDirConfirmDialog
 	bind:show={showResetUploadDirConfirm}
 	on:confirm={async () => {
-		const res = await deleteAllFiles(localStorage.token).catch((error) => {
+		const res = await deleteAllFiles(getAccessToken()).catch((error) => {
 			toast.error(`${error}`);
 			return null;
 		});
@@ -281,7 +282,7 @@
 <ResetVectorDBConfirmDialog
 	bind:show={showResetConfirm}
 	on:confirm={() => {
-		const res = resetVectorDB(localStorage.token).catch((error) => {
+		const res = resetVectorDB(getAccessToken()).catch((error) => {
 			toast.error(`${error}`);
 			return null;
 		});
@@ -295,7 +296,7 @@
 <ReindexKnowledgeFilesConfirmDialog
 	bind:show={showReindexConfirm}
 	on:confirm={async () => {
-		const res = await reindexKnowledgeFiles(localStorage.token).catch((error) => {
+		const res = await reindexKnowledgeFiles(getAccessToken()).catch((error) => {
 			toast.error(`${error}`);
 			return null;
 		});

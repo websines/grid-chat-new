@@ -1,4 +1,5 @@
 <script>
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { getContext, tick, onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
@@ -33,7 +34,7 @@
 	let feedbacks = [];
 
 	onMount(async () => {
-		feedbacks = await getAllFeedbacks(localStorage.token);
+		feedbacks = await getAllFeedbacks(getAccessToken());
 		loaded = true;
 
 		const containerElement = document.getElementById('users-tabs-container');

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { getContext, createEventDispatcher, onMount } from 'svelte';
 	import { createNewChannel, deleteChannelById } from '$lib/apis/channels';
 
@@ -57,7 +58,7 @@
 	const deleteHandler = async () => {
 		showDeleteConfirmDialog = false;
 
-		const res = await deleteChannelById(localStorage.token, channel.id).catch((error) => {
+		const res = await deleteChannelById(getAccessToken(), channel.id).catch((error) => {
 			toast.error(error.message);
 		});
 

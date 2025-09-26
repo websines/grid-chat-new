@@ -256,37 +256,62 @@ async def usage(sid, data):
         }
 
 
+def _get_token_from_cookie_header(cookie_header: str | None):
+    if not cookie_header:
+        return None
+
+    try:
+        from http.cookies import SimpleCookie
+
+        cookie = SimpleCookie()
+        cookie.load(cookie_header)
+        if "token" in cookie:
+            return cookie["token"].value
+    except Exception:
+        return None
+
+    return None
+
+
+def _resolve_user_from_sid_or_token(sid, auth, environ=None):
+    token = None
+
+    if auth and "token" in auth:
+        token = auth["token"]
+
+    if token is None and environ:
+        token = _get_token_from_cookie_header(environ.get("HTTP_COOKIE"))
+
+    if token:
+        data = decode_token(token)
+        if data is not None and "id" in data:
+            return Users.get_user_by_id(data["id"])
+
+    # Fall back to existing session mapping
+    if sid in SESSION_POOL:
+        session_user = SESSION_POOL.get(sid)
+        if session_user and "id" in session_user:
+            return Users.get_user_by_id(session_user["id"])
+
+    return None
+
+
 @sio.event
 async def connect(sid, environ, auth):
-    user = None
-    if auth and "token" in auth:
-        data = decode_token(auth["token"])
+    user = _resolve_user_from_sid_or_token(sid, auth, environ)
 
-        if data is not None and "id" in data:
-            user = Users.get_user_by_id(data["id"])
-
-        if user:
-            SESSION_POOL[sid] = user.model_dump(
-                exclude=["date_of_birth", "bio", "gender"]
-            )
-            if user.id in USER_POOL:
-                USER_POOL[user.id] = USER_POOL[user.id] + [sid]
-            else:
-                USER_POOL[user.id] = [sid]
+    if user:
+        SESSION_POOL[sid] = user.model_dump(exclude=["date_of_birth", "bio", "gender"])
+        if user.id in USER_POOL:
+            USER_POOL[user.id] = USER_POOL[user.id] + [sid]
+        else:
+            USER_POOL[user.id] = [sid]
 
 
 @sio.on("user-join")
 async def user_join(sid, data):
-
-    auth = data["auth"] if "auth" in data else None
-    if not auth or "token" not in auth:
-        return
-
-    data = decode_token(auth["token"])
-    if data is None or "id" not in data:
-        return
-
-    user = Users.get_user_by_id(data["id"])
+    auth = data.get("auth") if isinstance(data, dict) else None
+    user = _resolve_user_from_sid_or_token(sid, auth)
     if not user:
         return
 
@@ -306,15 +331,8 @@ async def user_join(sid, data):
 
 @sio.on("join-channels")
 async def join_channel(sid, data):
-    auth = data["auth"] if "auth" in data else None
-    if not auth or "token" not in auth:
-        return
-
-    data = decode_token(auth["token"])
-    if data is None or "id" not in data:
-        return
-
-    user = Users.get_user_by_id(data["id"])
+    auth = data.get("auth") if isinstance(data, dict) else None
+    user = _resolve_user_from_sid_or_token(sid, auth)
     if not user:
         return
 
@@ -327,15 +345,8 @@ async def join_channel(sid, data):
 
 @sio.on("join-note")
 async def join_note(sid, data):
-    auth = data["auth"] if "auth" in data else None
-    if not auth or "token" not in auth:
-        return
-
-    token_data = decode_token(auth["token"])
-    if token_data is None or "id" not in token_data:
-        return
-
-    user = Users.get_user_by_id(token_data["id"])
+    auth = data.get("auth") if isinstance(data, dict) else None
+    user = _resolve_user_from_sid_or_token(sid, auth)
     if not user:
         return
 

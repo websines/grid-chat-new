@@ -87,8 +87,12 @@ async def get_session_user(
 
     auth_header = request.headers.get("Authorization")
     auth_token = get_http_authorization_cred(auth_header)
-    token = auth_token.credentials
-    data = decode_token(token)
+    token = auth_token.credentials if auth_token else None
+
+    if token is None and "token" in request.cookies:
+        token = request.cookies.get("token")
+
+    data = decode_token(token) if token else None
 
     expires_at = None
 
@@ -113,6 +117,11 @@ async def get_session_user(
             httponly=True,  # Ensures the cookie is not accessible via JavaScript
             samesite=WEBUI_AUTH_COOKIE_SAME_SITE,
             secure=WEBUI_AUTH_COOKIE_SECURE,
+        )
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=ERROR_MESSAGES.INVALID_TOKEN,
         )
 
     user_permissions = get_permissions(

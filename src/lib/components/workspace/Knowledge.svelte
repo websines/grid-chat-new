@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import Fuse from 'fuse.js';
 
 	import dayjs from 'dayjs';
@@ -63,19 +64,19 @@
 	}
 
 	const deleteHandler = async (item) => {
-		const res = await deleteKnowledgeById(localStorage.token, item.id).catch((e) => {
+		const res = await deleteKnowledgeById(getAccessToken(), item.id).catch((e) => {
 			toast.error(`${e}`);
 		});
 
 		if (res) {
-			knowledgeBases = await getKnowledgeBaseList(localStorage.token);
-			knowledge.set(await getKnowledgeBases(localStorage.token));
+			knowledgeBases = await getKnowledgeBaseList(getAccessToken());
+			knowledge.set(await getKnowledgeBases(getAccessToken()));
 			toast.success($i18n.t('Knowledge deleted successfully.'));
 		}
 	};
 
 	onMount(async () => {
-		knowledgeBases = await getKnowledgeBaseList(localStorage.token);
+		knowledgeBases = await getKnowledgeBaseList(getAccessToken());
 		loaded = true;
 	});
 </script>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { v4 as uuidv4 } from 'uuid';
 
 	import { toast } from 'svelte-sonner';
@@ -52,7 +53,7 @@
 			}
 
 			const res = await updatePipelineValves(
-				localStorage.token,
+				getAccessToken(),
 				pipeline.id,
 				valves,
 				selectedPipelinesUrlIdx
@@ -65,7 +66,7 @@
 				setPipelines();
 				models.set(
 					await getModels(
-						localStorage.token,
+						getAccessToken(),
 						$config?.features?.enable_direct_connections && ($settings?.directConnections ?? null)
 					)
 				);
@@ -81,12 +82,12 @@
 		valves_spec = null;
 
 		valves_spec = await getPipelineValvesSpec(
-			localStorage.token,
+			getAccessToken(),
 			pipelines[idx].id,
 			selectedPipelinesUrlIdx
 		);
 		valves = await getPipelineValves(
-			localStorage.token,
+			getAccessToken(),
 			pipelines[idx].id,
 			selectedPipelinesUrlIdx
 		);
@@ -105,7 +106,7 @@
 
 		if (PIPELINES_LIST.length > 0) {
 			console.debug(selectedPipelinesUrlIdx);
-			pipelines = await getPipelines(localStorage.token, selectedPipelinesUrlIdx);
+			pipelines = await getPipelines(getAccessToken(), selectedPipelinesUrlIdx);
 
 			if (pipelines.length > 0) {
 				selectedPipelineIdx = 0;
@@ -119,7 +120,7 @@
 	const addPipelineHandler = async () => {
 		downloading = true;
 		const res = await downloadPipeline(
-			localStorage.token,
+			getAccessToken(),
 			pipelineDownloadUrl,
 			selectedPipelinesUrlIdx
 		).catch((error) => {
@@ -132,7 +133,7 @@
 			setPipelines();
 			models.set(
 				await getModels(
-					localStorage.token,
+					getAccessToken(),
 					$config?.features?.enable_direct_connections && ($settings?.directConnections ?? null)
 				)
 			);
@@ -149,7 +150,7 @@
 
 			console.log(file);
 
-			const res = await uploadPipeline(localStorage.token, file, selectedPipelinesUrlIdx).catch(
+			const res = await uploadPipeline(getAccessToken(), file, selectedPipelinesUrlIdx).catch(
 				(error) => {
 					console.error(error);
 					toast.error($i18n.t('Something went wrong :/'));
@@ -162,7 +163,7 @@
 				setPipelines();
 				models.set(
 					await getModels(
-						localStorage.token,
+						getAccessToken(),
 						$config?.features?.enable_direct_connections && ($settings?.directConnections ?? null)
 					)
 				);
@@ -183,7 +184,7 @@
 
 	const deletePipelineHandler = async () => {
 		const res = await deletePipeline(
-			localStorage.token,
+			getAccessToken(),
 			pipelines[selectedPipelineIdx].id,
 			selectedPipelinesUrlIdx
 		).catch((error) => {
@@ -196,7 +197,7 @@
 			setPipelines();
 			models.set(
 				await getModels(
-					localStorage.token,
+					getAccessToken(),
 					$config?.features?.enable_direct_connections && ($settings?.directConnections ?? null)
 				)
 			);
@@ -204,7 +205,7 @@
 	};
 
 	onMount(async () => {
-		PIPELINES_LIST = await getPipelinesList(localStorage.token);
+		PIPELINES_LIST = await getPipelinesList(getAccessToken());
 		console.log(PIPELINES_LIST);
 
 		if (PIPELINES_LIST.length > 0) {

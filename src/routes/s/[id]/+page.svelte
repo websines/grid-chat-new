@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { onMount, tick, getContext } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
@@ -60,7 +61,7 @@
 	//////////////////////////
 
 	const loadSharedChat = async () => {
-		const userSettings = await getUserSettings(localStorage.token).catch((error) => {
+		const userSettings = await getUserSettings(getAccessToken()).catch((error) => {
 			console.error(error);
 			return null;
 		});
@@ -81,18 +82,18 @@
 
 		await models.set(
 			await getModels(
-				localStorage.token,
+				getAccessToken(),
 				$config?.features?.enable_direct_connections && ($settings?.directConnections ?? null)
 			)
 		);
 		await chatId.set($page.params.id);
-		chat = await getChatByShareId(localStorage.token, $chatId).catch(async (error) => {
+		chat = await getChatByShareId(getAccessToken(), $chatId).catch(async (error) => {
 			await goto('/');
 			return null;
 		});
 
 		if (chat) {
-			user = await getUserById(localStorage.token, chat.user_id).catch((error) => {
+			user = await getUserById(getAccessToken(), chat.user_id).catch((error) => {
 				console.error(error);
 				return null;
 			});
@@ -130,7 +131,7 @@
 	const cloneSharedChat = async () => {
 		if (!chat) return;
 
-		const res = await cloneSharedChatById(localStorage.token, chat.id).catch((error) => {
+		const res = await cloneSharedChatById(getAccessToken(), chat.id).catch((error) => {
 			toast.error(`${error}`);
 			return null;
 		});

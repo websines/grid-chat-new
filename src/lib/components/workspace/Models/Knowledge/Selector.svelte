@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import Fuse from 'fuse.js';
 
 	import { DropdownMenu } from 'bits-ui';
@@ -40,7 +41,7 @@
 	};
 
 	onMount(async () => {
-		let notes = await getNoteList(localStorage.token).catch(() => {
+		let notes = await getNoteList(getAccessToken()).catch(() => {
 			return [];
 		});
 

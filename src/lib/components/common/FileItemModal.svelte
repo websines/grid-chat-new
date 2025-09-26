@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { getContext, onMount, tick } from 'svelte';
 	import { formatFileSize, getLineCount } from '$lib/utils';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
@@ -43,7 +44,7 @@
 		if (item?.type === 'collection') {
 			loading = true;
 
-			const knowledge = await getKnowledgeById(localStorage.token, item.id).catch((e) => {
+			const knowledge = await getKnowledgeById(getAccessToken(), item.id).catch((e) => {
 				console.error('Error fetching knowledge base:', e);
 				return null;
 			});
@@ -55,7 +56,7 @@
 		} else if (item?.type === 'file') {
 			loading = true;
 
-			const file = await getFileById(localStorage.token, item.id).catch((e) => {
+			const file = await getFileById(getAccessToken(), item.id).catch((e) => {
 				console.error('Error fetching file:', e);
 				return null;
 			});

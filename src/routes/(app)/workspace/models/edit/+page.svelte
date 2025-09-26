@@ -1,4 +1,5 @@
 <script>
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { toast } from 'svelte-sonner';
 	import { goto } from '$app/navigation';
 
@@ -18,7 +19,7 @@
 	onMount(async () => {
 		const _id = $page.url.searchParams.get('id');
 		if (_id) {
-			model = await getModelById(localStorage.token, _id).catch((e) => {
+			model = await getModelById(getAccessToken(), _id).catch((e) => {
 				return null;
 			});
 
@@ -31,12 +32,12 @@
 	});
 
 	const onSubmit = async (modelInfo) => {
-		const res = await updateModelById(localStorage.token, modelInfo.id, modelInfo);
+		const res = await updateModelById(getAccessToken(), modelInfo.id, modelInfo);
 
 		if (res) {
 			await models.set(
 				await getModels(
-					localStorage.token,
+					getAccessToken(),
 					$config?.features?.enable_direct_connections && ($settings?.directConnections ?? null)
 				)
 			);

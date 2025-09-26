@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { toast } from 'svelte-sonner';
 	import fileSaver from 'file-saver';
 	const { saveAs } = fileSaver;
@@ -116,7 +117,7 @@
 	//////////////////////
 
 	const deleteFeedbackHandler = async (feedbackId: string) => {
-		const response = await deleteFeedbackById(localStorage.token, feedbackId).catch((err) => {
+		const response = await deleteFeedbackById(getAccessToken(), feedbackId).catch((err) => {
 			toast.error(err);
 			return null;
 		});
@@ -153,7 +154,7 @@
 	};
 
 	const exportHandler = async () => {
-		const _feedbacks = await exportAllFeedbacks(localStorage.token).catch((err) => {
+		const _feedbacks = await exportAllFeedbacks(getAccessToken()).catch((err) => {
 			toast.error(err);
 			return null;
 		});

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { config, models, settings, user } from '$lib/stores';
 	import { createEventDispatcher, onMount, getContext } from 'svelte';
 	import { toast } from 'svelte-sonner';
@@ -109,7 +110,7 @@
 			});
 
 			if (position) {
-				await updateUserInfo(localStorage.token, { location: position });
+				await updateUserInfo(getAccessToken(), { location: position });
 				toast.success($i18n.t('User location successfully retrieved.'));
 			} else {
 				userLocation = false;

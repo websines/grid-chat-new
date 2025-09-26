@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { getContext, onDestroy, onMount, tick } from 'svelte';
 	import { v4 as uuidv4 } from 'uuid';
 	import fileSaver from 'file-saver';
@@ -146,7 +147,7 @@
 
 	const init = async () => {
 		loading = true;
-		const res = await getNoteById(localStorage.token, id).catch((error) => {
+		const res = await getNoteById(getAccessToken(), id).catch((error) => {
 			toast.error(`${error}`);
 			return null;
 		});
@@ -172,7 +173,7 @@
 		}
 
 		debounceTimeout = setTimeout(async () => {
-			const res = await updateNoteById(localStorage.token, id, {
+			const res = await updateNoteById(getAccessToken(), id, {
 				title: note?.title === '' ? $i18n.t('Untitled') : note.title,
 				data: {
 					files: files
@@ -243,7 +244,7 @@ ${content}
 		titleGenerating = true;
 
 		const res = await generateOpenAIChatCompletion(
-			localStorage.token,
+			getAccessToken(),
 			{
 				model: selectedModelId,
 				stream: false,
@@ -412,7 +413,7 @@ ${content}
 			}
 
 			// During the file upload, file content is automatically extracted.
-			const uploadedFile = await uploadFile(localStorage.token, file, metadata);
+			const uploadedFile = await uploadFile(getAccessToken(), file, metadata);
 
 			if (uploadedFile) {
 				console.log('File upload completed:', {
@@ -640,7 +641,7 @@ ${content}
 	};
 
 	const deleteNoteHandler = async (id) => {
-		const res = await deleteNoteById(localStorage.token, id).catch((error) => {
+		const res = await deleteNoteById(getAccessToken(), id).catch((error) => {
 			toast.error(`${error}`);
 			return null;
 		});
@@ -679,7 +680,7 @@ Provide the enhanced notes in markdown format. Use markdown syntax for headings,
 `;
 
 		const [res, controller] = await chatCompletion(
-			localStorage.token,
+			getAccessToken(),
 			{
 				model: model.id,
 				stream: true,
@@ -848,7 +849,7 @@ Provide the enhanced notes in markdown format. Use markdown syntax for headings,
 		$socket?.emit('join-note', {
 			note_id: id,
 			auth: {
-				token: localStorage.token
+				token: getAccessToken()
 			}
 		});
 		$socket?.on('note-events', noteEventHandler);

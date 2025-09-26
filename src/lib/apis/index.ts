@@ -1,3 +1,4 @@
+import { getAccessToken } from '$lib/utils/tokenStore';
 import { WEBUI_API_BASE_URL, WEBUI_BASE_URL } from '$lib/constants';
 import { convertOpenApiToToolPayload } from '$lib/utils';
 import { getOpenAIModelsDirect } from './openai';
@@ -362,7 +363,7 @@ export const getToolServersData = async (servers: object[]) => {
 					} else if (auth_type === 'none') {
 						// No authentication
 					} else if (auth_type === 'session') {
-						toolServerToken = localStorage.token;
+						toolServerToken = getAccessToken();
 					}
 
 					const data = await getToolServerData(

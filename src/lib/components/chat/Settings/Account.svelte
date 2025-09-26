@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { toast } from 'svelte-sonner';
 	import { onMount, getContext } from 'svelte';
 
@@ -56,7 +57,7 @@
 			});
 		}
 
-		const updatedUser = await updateUserProfile(localStorage.token, {
+		const updatedUser = await updateUserProfile(getAccessToken(), {
 			name: name,
 			profile_image_url: profileImageUrl,
 			bio: bio ? bio : null,
@@ -68,7 +69,7 @@
 
 		if (updatedUser) {
 			// Get Session User Info
-			const sessionUser = await getSessionUser(localStorage.token).catch((error) => {
+			const sessionUser = await getSessionUser(getAccessToken()).catch((error) => {
 				toast.error(`${error}`);
 				return null;
 			});
@@ -80,7 +81,7 @@
 	};
 
 	const createAPIKeyHandler = async () => {
-		APIKey = await createAPIKey(localStorage.token);
+		APIKey = await createAPIKey(getAccessToken());
 		if (APIKey) {
 			toast.success($i18n.t('API Key created.'));
 		} else {
@@ -89,7 +90,7 @@
 	};
 
 	onMount(async () => {
-		const user = await getSessionUser(localStorage.token).catch((error) => {
+		const user = await getSessionUser(getAccessToken()).catch((error) => {
 			toast.error(`${error}`);
 			return null;
 		});
@@ -107,7 +108,7 @@
 
 		webhookUrl = $settings?.notifications?.webhook_url ?? '';
 
-		APIKey = await getAPIKey(localStorage.token).catch((error) => {
+		APIKey = await getAPIKey(getAccessToken()).catch((error) => {
 			console.log(error);
 			return '';
 		});
@@ -252,7 +253,7 @@
 						<button
 							class=" text-xs text-center text-gray-800 dark:text-gray-400 rounded-lg py-0.5 opacity-0 group-hover:opacity-100 transition-all"
 							on:click={async () => {
-								const url = await getGravatarUrl(localStorage.token, $user?.email);
+								const url = await getGravatarUrl(getAccessToken(), $user?.email);
 
 								profileImageUrl = url;
 							}}>{$i18n.t('Gravatar')}</button
@@ -388,12 +389,12 @@
 							</div>
 
 							<div class="flex">
-								<SensitiveInput value={localStorage.token} readOnly={true} />
+								<SensitiveInput value={getAccessToken()} readOnly={true} />
 
 								<button
 									class="ml-1.5 px-1.5 py-1 dark:hover:bg-gray-850 transition rounded-lg"
 									on:click={() => {
-										copyToClipboard(localStorage.token);
+										copyToClipboard(getAccessToken());
 										JWTTokenCopied = true;
 										setTimeout(() => {
 											JWTTokenCopied = false;

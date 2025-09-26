@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { toast } from 'svelte-sonner';
 
 	import dayjs from 'dayjs';
@@ -101,7 +102,7 @@
 				onDelete={() => {
 					messages = messages.filter((m) => m.id !== message.id);
 
-					const res = deleteMessage(localStorage.token, message.channel_id, message.id).catch(
+					const res = deleteMessage(getAccessToken(), message.channel_id, message.id).catch(
 						(error) => {
 							toast.error(`${error}`);
 							return null;
@@ -116,7 +117,7 @@
 						return m;
 					});
 
-					const res = updateMessage(localStorage.token, message.channel_id, message.id, {
+					const res = updateMessage(getAccessToken(), message.channel_id, message.id, {
 						content: content
 					}).catch((error) => {
 						toast.error(`${error}`);
@@ -150,7 +151,7 @@
 						});
 
 						const res = removeReaction(
-							localStorage.token,
+							getAccessToken(),
 							message.channel_id,
 							message.id,
 							name
@@ -179,7 +180,7 @@
 							return m;
 						});
 
-						const res = addReaction(localStorage.token, message.channel_id, message.id, name).catch(
+						const res = addReaction(getAccessToken(), message.channel_id, message.id, name).catch(
 							(error) => {
 								toast.error(`${error}`);
 								return null;

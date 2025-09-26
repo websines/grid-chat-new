@@ -1,4 +1,5 @@
 <script>
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { onMount } from 'svelte';
 	import { config, models, settings } from '$lib/stores';
 	import { getModels } from '$lib/apis';
@@ -9,7 +10,7 @@
 			(async () => {
 				models.set(
 					await getModels(
-						localStorage.token,
+						getAccessToken(),
 						$config?.features?.enable_direct_connections && ($settings?.directConnections ?? null)
 					)
 				);

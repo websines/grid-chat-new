@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { DropdownMenu } from 'bits-ui';
 	import { getContext, onMount, tick } from 'svelte';
 	import { fly } from 'svelte/transition';
@@ -64,7 +65,7 @@
 
 	const init = async () => {
 		if ($_tools === null) {
-			await _tools.set(await getTools(localStorage.token));
+			await _tools.set(await getTools(getAccessToken()));
 		}
 
 		if ($_tools) {

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { toast } from 'svelte-sonner';
 	import { getContext, onMount } from 'svelte';
 	const i18n = getContext('i18n');
@@ -58,7 +59,7 @@
 		}
 
 		const res = await registerOAuthClient(
-			localStorage.token,
+			getAccessToken(),
 			{
 				url: url,
 				client_id: id
@@ -95,7 +96,7 @@
 
 		if (direct) {
 			const res = await getToolServerData(
-				auth_type === 'bearer' ? key : localStorage.token,
+				auth_type === 'bearer' ? key : getAccessToken(),
 				path.includes('://') ? path : `${url}${path.startsWith('/') ? '' : '/'}${path}`
 			).catch((err) => {
 				toast.error($i18n.t('Connection failed'));
@@ -106,7 +107,7 @@
 				console.debug('Connection successful', res);
 			}
 		} else {
-			const res = await verifyToolServerConnection(localStorage.token, {
+			const res = await verifyToolServerConnection(getAccessToken(), {
 				url,
 				path,
 				type,

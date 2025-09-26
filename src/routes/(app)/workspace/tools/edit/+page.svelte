@@ -1,4 +1,5 @@
 <script>
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { getToolById, getTools, updateToolById } from '$lib/apis/tools';
@@ -32,7 +33,7 @@
 			return;
 		}
 
-		const res = await updateToolById(localStorage.token, tool.id, {
+		const res = await updateToolById(getAccessToken(), tool.id, {
 			id: data.id,
 			name: data.name,
 			meta: data.meta,
@@ -45,7 +46,7 @@
 
 		if (res) {
 			toast.success($i18n.t('Tool updated successfully'));
-			tools.set(await getTools(localStorage.token));
+			tools.set(await getTools(getAccessToken()));
 
 			// await goto('/workspace/tools');
 		}
@@ -56,7 +57,7 @@
 		const id = $page.url.searchParams.get('id');
 
 		if (id) {
-			tool = await getToolById(localStorage.token, id).catch((error) => {
+			tool = await getToolById(getAccessToken(), id).catch((error) => {
 				toast.error(`${error}`);
 				goto('/workspace/tools');
 				return null;

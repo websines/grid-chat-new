@@ -1,4 +1,5 @@
 <script>
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { goto } from '$app/navigation';
 	import { createNewTool, getTools } from '$lib/apis/tools';
 	import ToolkitEditor from '$lib/components/workspace/Tools/ToolkitEditor.svelte';
@@ -32,7 +33,7 @@
 			return;
 		}
 
-		const res = await createNewTool(localStorage.token, {
+		const res = await createNewTool(getAccessToken(), {
 			id: data.id,
 			name: data.name,
 			meta: data.meta,
@@ -45,7 +46,7 @@
 
 		if (res) {
 			toast.success($i18n.t('Tool created successfully'));
-			tools.set(await getTools(localStorage.token));
+			tools.set(await getTools(getAccessToken()));
 
 			await goto('/workspace/tools');
 		}

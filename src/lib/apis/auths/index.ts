@@ -1,3 +1,4 @@
+import { getAccessToken, setAccessToken } from '$lib/utils/tokenStore';
 import { WEBUI_API_BASE_URL } from '$lib/constants';
 
 export const getAdminDetails = async (token: string) => {
@@ -22,6 +23,10 @@ export const getAdminDetails = async (token: string) => {
 
 	if (error) {
 		throw error;
+	}
+
+	if (res?.token) {
+		setAccessToken(res.token);
 	}
 
 	return res;
@@ -82,14 +87,15 @@ export const updateAdminConfig = async (token: string, body: object) => {
 	return res;
 };
 
-export const getSessionUser = async (token: string) => {
+export const getSessionUser = async (token: string | null | undefined = undefined) => {
 	let error = null;
+	const authToken = token ?? getAccessToken();
 
 	const res = await fetch(`${WEBUI_API_BASE_URL}/auths/`, {
 		method: 'GET',
 		headers: {
 			'Content-Type': 'application/json',
-			Authorization: `Bearer ${token}`
+			...(authToken ? { Authorization: `Bearer ${authToken}` } : {})
 		},
 		credentials: 'include'
 	})
@@ -349,6 +355,7 @@ export const userSignOut = async () => {
 	}
 
 	sessionStorage.clear();
+	setAccessToken(null);
 	return res;
 };
 

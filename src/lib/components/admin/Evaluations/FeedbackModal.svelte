@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import Modal from '$lib/components/common/Modal.svelte';
 	import { getContext } from 'svelte';
 	const i18n = getContext('i18n');
@@ -25,7 +26,7 @@
 		loaded = false;
 		feedbackData = null;
 		if (selectedFeedback) {
-			feedbackData = await getFeedbackById(localStorage.token, selectedFeedback.id).catch((err) => {
+			feedbackData = await getFeedbackById(getAccessToken(), selectedFeedback.id).catch((err) => {
 				return null;
 			});
 

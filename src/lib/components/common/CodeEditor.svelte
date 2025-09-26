@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { basicSetup, EditorView } from 'codemirror';
 	import { keymap, placeholder } from '@codemirror/view';
 	import { Compartment, EditorState } from '@codemirror/state';
@@ -197,7 +198,7 @@ print("${endTag}")
 		if (codeEditor) {
 			const res = await (
 				$user?.role === 'admin'
-					? formatPythonCode(localStorage.token, _value)
+					? formatPythonCode(getAccessToken(), _value)
 					: formatPythonCodePyodide(_value)
 			).catch((error) => {
 				toast.error(`${error}`);

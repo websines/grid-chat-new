@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { toast } from 'svelte-sonner';
 	import { onMount, getContext } from 'svelte';
 	import { getCodeExecutionConfig, setCodeExecutionConfig } from '$lib/apis/configs';
@@ -18,11 +19,11 @@
 	let engines = ['pyodide', 'jupyter'];
 
 	const submitHandler = async () => {
-		const res = await setCodeExecutionConfig(localStorage.token, config);
+		const res = await setCodeExecutionConfig(getAccessToken(), config);
 	};
 
 	onMount(async () => {
-		const res = await getCodeExecutionConfig(localStorage.token);
+		const res = await getCodeExecutionConfig(getAccessToken());
 
 		if (res) {
 			config = res;

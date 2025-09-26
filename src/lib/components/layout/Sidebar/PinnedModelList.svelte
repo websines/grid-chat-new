@@ -1,4 +1,5 @@
 <script>
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import Sortable from 'sortablejs';
 
 	import { onMount } from 'svelte';
@@ -27,7 +28,7 @@
 					pinnedModels.splice(newIndex, 0, modelId);
 
 					settings.set({ ...$settings, pinnedModels: pinnedModels });
-					await updateUserSettings(localStorage.token, { ui: $settings });
+					await updateUserSettings(getAccessToken(), { ui: $settings });
 				}
 			});
 		}
@@ -55,7 +56,7 @@
 				onUnpin={() => {
 					const pinnedModels = $settings.pinnedModels.filter((id) => id !== modelId);
 					settings.set({ ...$settings, pinnedModels });
-					updateUserSettings(localStorage.token, { ui: $settings });
+					updateUserSettings(getAccessToken(), { ui: $settings });
 				}}
 			/>
 		{/if}

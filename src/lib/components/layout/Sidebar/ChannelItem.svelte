@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { toast } from 'svelte-sonner';
 	import { onMount, getContext, tick, onDestroy } from 'svelte';
 	const i18n = getContext('i18n');
@@ -28,7 +29,7 @@
 	edit={true}
 	{onUpdate}
 	onSubmit={async ({ name, access_control }) => {
-		const res = await updateChannelById(localStorage.token, channel.id, {
+		const res = await updateChannelById(getAccessToken(), channel.id, {
 			name,
 			access_control
 		}).catch((error) => {

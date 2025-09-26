@@ -1274,7 +1274,7 @@ class OAuthManager:
         response.set_cookie(
             key="token",
             value=jwt_token,
-            httponly=False,  # Required for frontend access
+            httponly=True,
             samesite=WEBUI_AUTH_COOKIE_SAME_SITE,
             secure=WEBUI_AUTH_COOKIE_SECURE,
         )

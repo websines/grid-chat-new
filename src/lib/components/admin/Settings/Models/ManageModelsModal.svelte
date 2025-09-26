@@ -1,4 +1,5 @@
 <script>
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { toast } from 'svelte-sonner';
 
 	import { createEventDispatcher, getContext, onMount } from 'svelte';
@@ -23,7 +24,7 @@
 		if ($user?.role === 'admin') {
 			await Promise.all([
 				(async () => {
-					ollamaConfig = await getOllamaConfig(localStorage.token);
+					ollamaConfig = await getOllamaConfig(getAccessToken());
 				})()
 			]);
 

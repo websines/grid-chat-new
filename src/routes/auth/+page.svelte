@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { setAccessToken } from '$lib/utils/tokenStore';
 	import DOMPurify from 'dompurify';
 	import { marked } from 'marked';
 
@@ -41,7 +42,7 @@
 			console.log(sessionUser);
 			toast.success($i18n.t(`You're now logged in.`));
 			if (sessionUser.token) {
-				localStorage.token = sessionUser.token;
+				setAccessToken(sessionUser.token);
 			}
 			$socket.emit('user-join', { auth: { token: sessionUser.token } });
 			await user.set(sessionUser);
@@ -124,7 +125,7 @@
 			return;
 		}
 
-		localStorage.token = token;
+		setAccessToken(token);
 		await setSessionUser(sessionUser, localStorage.getItem('redirectPath') || null);
 	};
 

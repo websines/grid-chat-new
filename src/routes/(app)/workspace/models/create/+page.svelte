@@ -1,4 +1,5 @@
 <script>
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { v4 as uuidv4 } from 'uuid';
 	import { toast } from 'svelte-sonner';
 	import { goto } from '$app/navigation';
@@ -30,7 +31,7 @@
 		}
 
 		if (modelInfo) {
-			const res = await createNewModel(localStorage.token, {
+			const res = await createNewModel(getAccessToken(), {
 				...modelInfo,
 				meta: {
 					...modelInfo.meta,
@@ -49,7 +50,7 @@
 			if (res) {
 				await models.set(
 					await getModels(
-						localStorage.token,
+						getAccessToken(),
 						$config?.features?.enable_direct_connections && ($settings?.directConnections ?? null)
 					)
 				);

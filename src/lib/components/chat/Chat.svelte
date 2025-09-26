@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { v4 as uuidv4 } from 'uuid';
 	import { toast } from 'svelte-sonner';
 	import { PaneGroup, Pane, PaneResizer } from 'paneforge';
@@ -250,10 +251,10 @@ let selectedImageStyleComposer = '';
 
 	const setDefaults = async () => {
 		if (!$tools) {
-			tools.set(await getTools(localStorage.token));
+			tools.set(await getTools(getAccessToken()));
 		}
 		if (!$functions) {
-			functions.set(await getFunctions(localStorage.token));
+			functions.set(await getFunctions(getAccessToken()));
 		}
 		if (selectedModels.length !== 1 && !atSelectedModel) {
 			return;
@@ -374,10 +375,10 @@ let selectedImageStyleComposer = '';
 				} else if (type === 'chat:title') {
 					chatTitle.set(data);
 					currentChatPage.set(1);
-					await chats.set(await getChatList(localStorage.token, $currentChatPage));
+					await chats.set(await getChatList(getAccessToken(), $currentChatPage));
 				} else if (type === 'chat:tags') {
-					chat = await getChatById(localStorage.token, $chatId);
-					allTags.set(await getAllTags(localStorage.token));
+					chat = await getChatById(getAccessToken(), $chatId);
+					allTags.set(await getAllTags(getAccessToken()));
 				} else if (type === 'source' || type === 'citation') {
 					if (data?.type === 'code_execution') {
 						// Code execution; update existing code execution by ID, or add new one.
@@ -677,7 +678,7 @@ let selectedImageStyleComposer = '';
 
 			// Upload file to server
 			console.log('Uploading file to server...');
-			const uploadedFile = await uploadFile(localStorage.token, file, metadata);
+			const uploadedFile = await uploadFile(getAccessToken(), file, metadata);
 
 			if (!uploadedFile) {
 				throw new Error('Server returned null response for file upload');
@@ -720,7 +721,7 @@ let selectedImageStyleComposer = '';
 
 		try {
 			files = [...files, fileItem];
-			const res = await processWeb(localStorage.token, '', url);
+			const res = await processWeb(getAccessToken(), '', url);
 
 			if (res) {
 				fileItem.status = 'uploaded';
@@ -754,7 +755,7 @@ let selectedImageStyleComposer = '';
 
 		try {
 			files = [...files, fileItem];
-			const res = await processYoutubeVideo(localStorage.token, url);
+			const res = await processYoutubeVideo(getAccessToken(), url);
 
 			if (res) {
 				fileItem.status = 'uploaded';
@@ -929,7 +930,7 @@ let selectedImageStyleComposer = '';
 			$models.map((m) => m.id).includes(modelId) ? modelId : ''
 		);
 
-		const userSettings = await getUserSettings(localStorage.token);
+		const userSettings = await getUserSettings(getAccessToken());
 
 		if (userSettings) {
 			settings.set(userSettings.ui);
@@ -948,13 +949,13 @@ let selectedImageStyleComposer = '';
 			temporaryChatEnabled.set(false);
 		}
 
-		chat = await getChatById(localStorage.token, $chatId).catch(async (error) => {
+		chat = await getChatById(getAccessToken(), $chatId).catch(async (error) => {
 			await goto('/');
 			return null;
 		});
 
 		if (chat) {
-			tags = await getTagsById(localStorage.token, $chatId).catch(async (error) => {
+			tags = await getTagsById(getAccessToken(), $chatId).catch(async (error) => {
 				return [];
 			});
 
@@ -981,7 +982,7 @@ let selectedImageStyleComposer = '';
 
 				chatTitle.set(chatContent.title);
 
-				const userSettings = await getUserSettings(localStorage.token);
+				const userSettings = await getUserSettings(getAccessToken());
 
 				if (userSettings) {
 					await settings.set(userSettings.ui);
@@ -1003,7 +1004,7 @@ let selectedImageStyleComposer = '';
 					}
 				}
 
-				const taskRes = await getTaskIdsByChatId(localStorage.token, $chatId).catch((error) => {
+				const taskRes = await getTaskIdsByChatId(getAccessToken(), $chatId).catch((error) => {
 					return null;
 				});
 
@@ -1030,7 +1031,7 @@ let selectedImageStyleComposer = '';
 		}
 	};
 	const chatCompletedHandler = async (chatId, modelId, responseMessageId, messages) => {
-		const res = await chatCompleted(localStorage.token, {
+		const res = await chatCompleted(getAccessToken(), {
 			model: modelId,
 			messages: messages.map((m) => ({
 			id: m.id,
@@ -1073,7 +1074,7 @@ let selectedImageStyleComposer = '';
 
 		if ($chatId == chatId) {
 			if (!$temporaryChatEnabled) {
-				chat = await updateChatById(localStorage.token, chatId, {
+				chat = await updateChatById(getAccessToken(), chatId, {
 					models: selectedModels,
 					messages: messages,
 					history: history,
@@ -1082,7 +1083,7 @@ let selectedImageStyleComposer = '';
 				});
 
 				currentChatPage.set(1);
-				await chats.set(await getChatList(localStorage.token, $currentChatPage));
+				await chats.set(await getChatList(getAccessToken(), $currentChatPage));
 			}
 		}
 
@@ -1092,7 +1093,7 @@ let selectedImageStyleComposer = '';
 	const chatActionHandler = async (chatId, actionId, modelId, responseMessageId, event = null) => {
 		const messages = createMessagesList(history, responseMessageId);
 
-		const res = await chatAction(localStorage.token, actionId, {
+		const res = await chatAction(getAccessToken(), actionId, {
 			model: modelId,
 			messages: messages.map((m) => ({
 			id: m.id,
@@ -1128,7 +1129,7 @@ let selectedImageStyleComposer = '';
 
 		if ($chatId == chatId) {
 			if (!$temporaryChatEnabled) {
-				chat = await updateChatById(localStorage.token, chatId, {
+				chat = await updateChatById(getAccessToken(), chatId, {
 					models: selectedModels,
 					messages: messages,
 					history: history,
@@ -1137,7 +1138,7 @@ let selectedImageStyleComposer = '';
 				});
 
 				currentChatPage.set(1);
-				await chats.set(await getChatList(localStorage.token, $currentChatPage));
+				await chats.set(await getChatList(getAccessToken(), $currentChatPage));
 			}
 		}
 	};
@@ -1658,7 +1659,7 @@ let selectedImageStyleComposer = '';
 		);
 
 		currentChatPage.set(1);
-		chats.set(await getChatList(localStorage.token, $currentChatPage));
+		chats.set(await getChatList(getAccessToken(), $currentChatPage));
 	};
 
     const getEffectiveImageStyle = () => {
@@ -1751,7 +1752,7 @@ let selectedImageStyleComposer = '';
 
 		let userLocation;
 		if ($settings?.userLocation) {
-			userLocation = await getAndUpdateUserLocation(localStorage.token).catch((err) => {
+			userLocation = await getAndUpdateUserLocation(getAccessToken()).catch((err) => {
 				console.error(err);
 				return undefined;
 			});
@@ -1828,7 +1829,7 @@ let selectedImageStyleComposer = '';
 				: $toolServers;
 
 		const res = await generateOpenAIChatCompletion(
-			localStorage.token,
+			getAccessToken(),
 			{
 				stream: stream,
 				model: model.id,
@@ -1974,7 +1975,7 @@ let selectedImageStyleComposer = '';
 	const stopResponse = async () => {
 		if (taskIds) {
 			for (const taskId of taskIds) {
-				const res = await stopTask(localStorage.token, taskId).catch((error) => {
+				const res = await stopTask(getAccessToken(), taskId).catch((error) => {
 					toast.error(`${error}`);
 					return null;
 				});
@@ -2106,7 +2107,7 @@ let selectedImageStyleComposer = '';
 		try {
 			generating = true;
 			const [res, controller] = await generateMoACompletion(
-				localStorage.token,
+				getAccessToken(),
 				message.model,
 				history.messages[message.parentId].content,
 				responses
@@ -2149,7 +2150,7 @@ let selectedImageStyleComposer = '';
 
 		if (!$temporaryChatEnabled) {
 			chat = await createNewChat(
-				localStorage.token,
+				getAccessToken(),
 				{
 					id: _chatId,
 					title: $i18n.t('New Chat'),
@@ -2171,7 +2172,7 @@ let selectedImageStyleComposer = '';
 
 			await tick();
 
-			await chats.set(await getChatList(localStorage.token, $currentChatPage));
+			await chats.set(await getChatList(getAccessToken(), $currentChatPage));
 			currentChatPage.set(1);
 
 			selectedFolder.set(null);
@@ -2187,7 +2188,7 @@ let selectedImageStyleComposer = '';
 	const saveChatHandler = async (_chatId, history) => {
 		if ($chatId == _chatId) {
 			if (!$temporaryChatEnabled) {
-				chat = await updateChatById(localStorage.token, _chatId, {
+				chat = await updateChatById(getAccessToken(), _chatId, {
 					models: selectedModels,
 					history: history,
 					messages: createMessagesList(history, history.currentId),
@@ -2195,7 +2196,7 @@ let selectedImageStyleComposer = '';
 					files: chatFiles
 				});
 				currentChatPage.set(1);
-				await chats.set(await getChatList(localStorage.token, $currentChatPage));
+				await chats.set(await getChatList(getAccessToken(), $currentChatPage));
 			}
 		}
 	};
@@ -2229,7 +2230,7 @@ let selectedImageStyleComposer = '';
 
 	const moveChatHandler = async (chatId, folderId) => {
 		if (chatId && folderId) {
-			const res = await updateChatFolderIdById(localStorage.token, chatId, folderId).catch(
+			const res = await updateChatFolderIdById(getAccessToken(), chatId, folderId).catch(
 				(error) => {
 					toast.error(`${error}`);
 					return null;
@@ -2238,8 +2239,8 @@ let selectedImageStyleComposer = '';
 
 			if (res) {
 				currentChatPage.set(1);
-				await chats.set(await getChatList(localStorage.token, $currentChatPage));
-				await pinnedChats.set(await getPinnedChatList(localStorage.token));
+				await chats.set(await getChatList(getAccessToken(), $currentChatPage));
+				await pinnedChats.set(await getPinnedChatList(getAccessToken()));
 
 				toast.success($i18n.t('Chat moved successfully'));
 			}
@@ -2344,7 +2345,7 @@ let selectedImageStyleComposer = '';
 									messages.find((m) => m.role === 'user')?.content ?? $i18n.t('New Chat');
 
 								const savedChat = await createNewChat(
-									localStorage.token,
+									getAccessToken(),
 									{
 										id: uuidv4(),
 										title: title.length > 50 ? `${title.slice(0, 50)}...` : title,
@@ -2359,7 +2360,7 @@ let selectedImageStyleComposer = '';
 								if (savedChat) {
 									temporaryChatEnabled.set(false);
 									chatId.set(savedChat.id);
-									chats.set(await getChatList(localStorage.token, $currentChatPage));
+									chats.set(await getChatList(getAccessToken(), $currentChatPage));
 
 									await goto(`/c/${savedChat.id}`);
 									toast.success($i18n.t('Conversation saved successfully'));

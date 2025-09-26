@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { toast } from 'svelte-sonner';
 	import { v4 as uuidv4 } from 'uuid';
 
@@ -141,7 +142,7 @@
 			text = text.replaceAll('{{USER_LOCATION}}', String(location));
 		}
 
-		const sessionUser = await getSessionUser(localStorage.token);
+		const sessionUser = await getSessionUser(getAccessToken());
 
 		if (text.includes('{{USER_NAME}}')) {
 			const name = sessionUser?.name || 'User';
@@ -468,7 +469,7 @@
 				};
 			}
 
-			const uploadedFile = await uploadFile(localStorage.token, file, metadata);
+			const uploadedFile = await uploadFile(getAccessToken(), file, metadata);
 
 			if (uploadedFile) {
 				console.info('File upload completed:', {

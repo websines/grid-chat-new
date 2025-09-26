@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { toast } from 'svelte-sonner';
 	import dayjs from 'dayjs';
 
@@ -180,7 +181,7 @@ $: (() => {
 onMount(async () => {
     try {
         // Fetch styles list from backend
-        imageStyles = (await getImageStyles(localStorage.token)) ?? [];
+        imageStyles = (await getImageStyles(getAccessToken())) ?? [];
         // Restore saved style selection if valid
         const savedStyle = localStorage.getItem('owui_image_style_id') || '';
         if (!selectedImageStyle || !imageStyles.some((s) => s.id === selectedImageStyle)) {
@@ -358,7 +359,7 @@ onMount(async () => {
 			} else {
 				for (const [idx, sentence] of messageContentParts.entries()) {
 					const res = await synthesizeOpenAISpeech(
-						localStorage.token,
+						getAccessToken(),
 						$settings?.audio?.tts?.defaultVoice === $config.audio.tts.voice
 							? ($settings?.audio?.tts?.voice ?? $config?.audio?.tts?.voice)
 							: $config?.audio?.tts?.voice,
@@ -461,7 +462,7 @@ onMount(async () => {
 	        }
 	    })();
 	    const styleToUse = selectedImageStyle || persistedStyle || undefined;
-	    const res = await imageGenerations(localStorage.token, message.content, undefined, undefined, styleToUse).catch((error) => {
+	    const res = await imageGenerations(getAccessToken(), message.content, undefined, undefined, styleToUse).catch((error) => {
 	        toast.error(`${error}`);
 	    });
 		console.log(res);
@@ -496,7 +497,7 @@ onMount(async () => {
 			}
 		};
 
-		const chat = await getChatById(localStorage.token, chatId).catch((error) => {
+		const chat = await getChatById(getAccessToken(), chatId).catch((error) => {
 			toast.error(`${error}`);
 		});
 		if (!chat) {
@@ -548,14 +549,14 @@ onMount(async () => {
 		let feedback = null;
 		if (message?.feedbackId) {
 			feedback = await updateFeedbackById(
-				localStorage.token,
+				getAccessToken(),
 				message.feedbackId,
 				feedbackItem
 			).catch((error) => {
 				toast.error(`${error}`);
 			});
 		} else {
-			feedback = await createNewFeedback(localStorage.token, feedbackItem).catch((error) => {
+			feedback = await createNewFeedback(getAccessToken(), feedbackItem).catch((error) => {
 				toast.error(`${error}`);
 			});
 
@@ -574,7 +575,7 @@ onMount(async () => {
 
 			if (!updatedMessage.annotation?.tags && (message?.content ?? '') !== '') {
 				// attempt to generate tags
-				const tags = await generateTags(localStorage.token, message.model, messages, chatId).catch(
+				const tags = await generateTags(getAccessToken(), message.model, messages, chatId).catch(
 					(error) => {
 						console.error(error);
 						return [];
@@ -588,7 +589,7 @@ onMount(async () => {
 
 					saveMessage(message.id, updatedMessage);
 					await updateFeedbackById(
-						localStorage.token,
+						getAccessToken(),
 						updatedMessage.feedbackId,
 						feedbackItem
 					).catch((error) => {

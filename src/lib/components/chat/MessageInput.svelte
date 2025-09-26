@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import DOMPurify from 'dompurify';
 	import { marked } from 'marked';
 
@@ -114,7 +115,7 @@ export let selectedImageStyleComposer: string = '';
 onMount(async () => {
     try {
         // Fetch styles list from backend
-        imageStyles = (await getImageStyles(localStorage.token)) ?? [];
+        imageStyles = (await getImageStyles(getAccessToken())) ?? [];
 
         // Restore saved style if available
         const savedStyle = localStorage.getItem('owui_image_style_id') || '';
@@ -230,7 +231,7 @@ $: (() => {
 			text = text.replaceAll('{{USER_LOCATION}}', String(location));
 		}
 
-		const sessionUser = await getSessionUser(localStorage.token);
+		const sessionUser = await getSessionUser(getAccessToken());
 
 		if (text.includes('{{USER_NAME}}')) {
 			const name = sessionUser?.name || 'User';
@@ -661,7 +662,7 @@ $: (() => {
 				}
 
 				// During the file upload, file content is automatically extracted.
-				const uploadedFile = await uploadFile(localStorage.token, file, metadata);
+				const uploadedFile = await uploadFile(getAccessToken(), file, metadata);
 
 				if (uploadedFile) {
 					console.log('File upload completed:', {
@@ -1223,7 +1224,7 @@ $: (() => {
 														}
 
 														const res = await generateAutoCompletion(
-															localStorage.token,
+															getAccessToken(),
 															selectedModelIds.at(0),
 															text,
 															history?.currentId

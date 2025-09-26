@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { toast } from 'svelte-sonner';
 	import { goto } from '$app/navigation';
 	import { prompts } from '$lib/stores';
@@ -19,7 +20,7 @@
 	let clone = false;
 
 	const onSubmit = async (_prompt) => {
-		const res = await createNewPrompt(localStorage.token, _prompt).catch((error) => {
+		const res = await createNewPrompt(getAccessToken(), _prompt).catch((error) => {
 			toast.error(`${error}`);
 			return null;
 		});
@@ -27,7 +28,7 @@
 		if (res) {
 			toast.success($i18n.t('Prompt created successfully'));
 
-			await prompts.set(await getPrompts(localStorage.token));
+			await prompts.set(await getPrompts(getAccessToken()));
 			await goto('/workspace/prompts');
 		}
 	};

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import fileSaver from 'file-saver';
 	const { saveAs } = fileSaver;
 
@@ -58,7 +59,7 @@
 
 			if (chat.chat) {
 				await importChat(
-					localStorage.token,
+					getAccessToken(),
 					chat.chat,
 					chat.meta ?? {},
 					false,
@@ -68,17 +69,17 @@
 				);
 			} else {
 				// Legacy format
-				await importChat(localStorage.token, chat, {}, false, null);
+				await importChat(getAccessToken(), chat, {}, false, null);
 			}
 		}
 
 		currentChatPage.set(1);
-		await chats.set(await getChatList(localStorage.token, $currentChatPage));
+		await chats.set(await getChatList(getAccessToken(), $currentChatPage));
 		scrollPaginationEnabled.set(true);
 	};
 
 	const exportChats = async () => {
-		let blob = new Blob([JSON.stringify(await getAllChats(localStorage.token))], {
+		let blob = new Blob([JSON.stringify(await getAllChats(getAccessToken()))], {
 			type: 'application/json'
 		});
 		saveAs(blob, `chat-export-${Date.now()}.json`);
@@ -86,29 +87,29 @@
 
 	const archiveAllChatsHandler = async () => {
 		await goto('/');
-		await archiveAllChats(localStorage.token).catch((error) => {
+		await archiveAllChats(getAccessToken()).catch((error) => {
 			toast.error(`${error}`);
 		});
 
 		currentChatPage.set(1);
-		await chats.set(await getChatList(localStorage.token, $currentChatPage));
+		await chats.set(await getChatList(getAccessToken(), $currentChatPage));
 		scrollPaginationEnabled.set(true);
 	};
 
 	const deleteAllChatsHandler = async () => {
 		await goto('/');
-		await deleteAllChats(localStorage.token).catch((error) => {
+		await deleteAllChats(getAccessToken()).catch((error) => {
 			toast.error(`${error}`);
 		});
 
 		currentChatPage.set(1);
-		await chats.set(await getChatList(localStorage.token, $currentChatPage));
+		await chats.set(await getChatList(getAccessToken(), $currentChatPage));
 		scrollPaginationEnabled.set(true);
 	};
 
 	const handleArchivedChatsChange = async () => {
 		currentChatPage.set(1);
-		await chats.set(await getChatList(localStorage.token, $currentChatPage));
+		await chats.set(await getChatList(getAccessToken(), $currentChatPage));
 
 		scrollPaginationEnabled.set(true);
 	};

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { DropdownMenu } from 'bits-ui';
 	import { marked } from 'marked';
 	import Fuse from 'fuse.js';
@@ -177,7 +178,7 @@
 			return;
 		}
 
-		const [res, controller] = await pullModel(localStorage.token, sanitizedModelTag, '0').catch(
+		const [res, controller] = await pullModel(getAccessToken(), sanitizedModelTag, '0').catch(
 			(error) => {
 				toast.error(`${error}`);
 				return null;
@@ -270,7 +271,7 @@
 
 				models.set(
 					await getModels(
-						localStorage.token,
+						getAccessToken(),
 						$config?.features?.enable_direct_connections && ($settings?.directConnections ?? null)
 					)
 				);
@@ -287,7 +288,7 @@
 	};
 
 	const setOllamaVersion = async () => {
-		ollamaVersion = await getOllamaVersion(localStorage.token).catch((error) => false);
+		ollamaVersion = await getOllamaVersion(getAccessToken()).catch((error) => false);
 	};
 
 	onMount(async () => {
@@ -317,13 +318,13 @@
 			MODEL_DOWNLOAD_POOL.set({
 				...$MODEL_DOWNLOAD_POOL
 			});
-			await deleteModel(localStorage.token, model);
+			await deleteModel(getAccessToken(), model);
 			toast.success($i18n.t('{{model}} download has been canceled', { model: model }));
 		}
 	};
 
 	const unloadModelHandler = async (model: string) => {
-		const res = await unloadModel(localStorage.token, model).catch((error) => {
+		const res = await unloadModel(getAccessToken(), model).catch((error) => {
 			toast.error($i18n.t('Error unloading model: {{error}}', { error }));
 		});
 
@@ -331,7 +332,7 @@
 			toast.success($i18n.t('Model unloaded successfully'));
 			models.set(
 				await getModels(
-					localStorage.token,
+					getAccessToken(),
 					$config?.features?.enable_direct_connections && ($settings?.directConnections ?? null)
 				)
 			);
@@ -364,7 +365,7 @@
 			on:mouseenter={async () => {
 				models.set(
 					await getModels(
-						localStorage.token,
+						getAccessToken(),
 						$config?.features?.enable_direct_connections && ($settings?.directConnections ?? null)
 					)
 				);

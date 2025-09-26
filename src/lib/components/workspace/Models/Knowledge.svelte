@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { getContext, onMount } from 'svelte';
 	import { config, knowledge, settings, user } from '$lib/stores';
 
@@ -61,7 +62,7 @@
 			}
 
 			// During the file upload, file content is automatically extracted.
-			const uploadedFile = await uploadFile(localStorage.token, file, metadata);
+			const uploadedFile = await uploadFile(getAccessToken(), file, metadata);
 
 			if (uploadedFile) {
 				console.log('File upload completed:', {
@@ -129,7 +130,7 @@
 
 	onMount(async () => {
 		if (!$knowledge) {
-			knowledge.set(await getKnowledgeBases(localStorage.token));
+			knowledge.set(await getKnowledgeBases(getAccessToken()));
 		}
 		loaded = true;
 	});

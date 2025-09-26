@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { toast } from 'svelte-sonner';
 	import { tick, getContext, onMount, onDestroy } from 'svelte';
 	import { config, settings } from '$lib/stores';
@@ -156,7 +157,7 @@
 			}
 
 			const res = await transcribeAudio(
-				localStorage.token,
+				getAccessToken(),
 				file,
 				$settings?.audio?.stt?.language
 			).catch((error) => {

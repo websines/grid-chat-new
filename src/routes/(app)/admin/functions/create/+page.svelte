@@ -1,4 +1,5 @@
 <script>
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { toast } from 'svelte-sonner';
 	import { onMount, getContext } from 'svelte';
 	import { goto } from '$app/navigation';
@@ -34,7 +35,7 @@
 			return;
 		}
 
-		const res = await createNewFunction(localStorage.token, {
+		const res = await createNewFunction(getAccessToken(), {
 			id: data.id,
 			name: data.name,
 			meta: data.meta,
@@ -46,10 +47,10 @@
 
 		if (res) {
 			toast.success($i18n.t('Function created successfully'));
-			functions.set(await getFunctions(localStorage.token));
+			functions.set(await getFunctions(getAccessToken()));
 			models.set(
 				await getModels(
-					localStorage.token,
+					getAccessToken(),
 					$config?.features?.enable_direct_connections && ($settings?.directConnections ?? null),
 					false,
 					true

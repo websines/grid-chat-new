@@ -487,13 +487,13 @@ OAUTH_PROVIDER_NAME = PersistentConfig(
 OAUTH_SUB_CLAIM = PersistentConfig(
     "OAUTH_SUB_CLAIM",
     "oauth.oidc.sub_claim",
-    os.environ.get("OAUTH_SUB_CLAIM", None),
+    os.environ.get("OAUTH_SUB_CLAIM", "sub"),
 )
 
 OAUTH_USERNAME_CLAIM = PersistentConfig(
     "OAUTH_USERNAME_CLAIM",
     "oauth.oidc.username_claim",
-    os.environ.get("OAUTH_USERNAME_CLAIM", "name"),
+    os.environ.get("OAUTH_USERNAME_CLAIM", "preferred_username"),
 )
 
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { marked } from 'marked';
 
 	import { toast } from 'svelte-sonner';
@@ -75,7 +76,7 @@
 	let query = '';
 
 	const deleteModelHandler = async (model) => {
-		const res = await deleteModelById(localStorage.token, model.id).catch((e) => {
+		const res = await deleteModelById(getAccessToken(), model.id).catch((e) => {
 			toast.error(`${e}`);
 			return null;
 		});
@@ -86,11 +87,11 @@
 
 		await _models.set(
 			await getModels(
-				localStorage.token,
+				getAccessToken(),
 				$config?.features?.enable_direct_connections && ($settings?.directConnections ?? null)
 			)
 		);
-		models = await getWorkspaceModels(localStorage.token);
+		models = await getWorkspaceModels(getAccessToken());
 	};
 
 	const cloneModelHandler = async (model) => {
@@ -128,7 +129,7 @@
 
 		console.log(model);
 
-		const res = await updateModelById(localStorage.token, model.id, model);
+		const res = await updateModelById(getAccessToken(), model.id, model);
 
 		if (res) {
 			toast.success(
@@ -141,11 +142,11 @@
 
 		await _models.set(
 			await getModels(
-				localStorage.token,
+				getAccessToken(),
 				$config?.features?.enable_direct_connections && ($settings?.directConnections ?? null)
 			)
 		);
-		models = await getWorkspaceModels(localStorage.token);
+		models = await getWorkspaceModels(getAccessToken());
 	};
 
 	const copyLinkHandler = async (model) => {
@@ -174,8 +175,8 @@
 	};
 
 	onMount(async () => {
-		models = await getWorkspaceModels(localStorage.token);
-		let groups = await getGroups(localStorage.token);
+		models = await getWorkspaceModels(getAccessToken());
+		let groups = await getGroups(getAccessToken());
 		group_ids = groups.map((group) => group.id);
 
 		if (models) {
@@ -473,10 +474,10 @@
 									<Switch
 										bind:state={model.is_active}
 										on:change={async (e) => {
-											toggleModelById(localStorage.token, model.id);
+											toggleModelById(getAccessToken(), model.id);
 											_models.set(
 												await getModels(
-													localStorage.token,
+													getAccessToken(),
 													$config?.features?.enable_direct_connections &&
 														($settings?.directConnections ?? null)
 												)
@@ -513,19 +514,19 @@
 							for (const model of savedModels) {
 								if (model?.info ?? false) {
 									if ($_models.find((m) => m.id === model.id)) {
-										await updateModelById(localStorage.token, model.id, model.info).catch(
+										await updateModelById(getAccessToken(), model.id, model.info).catch(
 											(error) => {
 												return null;
 											}
 										);
 									} else {
-										await createNewModel(localStorage.token, model.info).catch((error) => {
+										await createNewModel(getAccessToken(), model.info).catch((error) => {
 											return null;
 										});
 									}
 								} else {
 									if (model?.id && model?.name) {
-										await createNewModel(localStorage.token, model).catch((error) => {
+										await createNewModel(getAccessToken(), model).catch((error) => {
 											return null;
 										});
 									}
@@ -534,12 +535,12 @@
 
 							await _models.set(
 								await getModels(
-									localStorage.token,
+									getAccessToken(),
 									$config?.features?.enable_direct_connections &&
 										($settings?.directConnections ?? null)
 								)
 							);
-							models = await getWorkspaceModels(localStorage.token);
+							models = await getWorkspaceModels(getAccessToken());
 						};
 
 						reader.readAsText(importFiles[0]);

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { DropdownMenu } from 'bits-ui';
 	import { getContext, onMount, tick } from 'svelte';
 	import { fly } from 'svelte/transition';
@@ -71,7 +72,7 @@
 
 	const init = async () => {
 		if ($knowledge === null) {
-			await knowledge.set(await getKnowledgeBases(localStorage.token));
+			await knowledge.set(await getKnowledgeBases(getAccessToken()));
 		}
 	};
 

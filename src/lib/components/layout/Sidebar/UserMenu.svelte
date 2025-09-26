@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken, setAccessToken } from '$lib/utils/tokenStore';
 	import { DropdownMenu } from 'bits-ui';
 	import { createEventDispatcher, getContext, onMount, tick } from 'svelte';
 
@@ -33,7 +34,7 @@
 
 	let usage = null;
 	const getUsageInfo = async () => {
-		const res = await getUsage(localStorage.token).catch((error) => {
+		const res = await getUsage(getAccessToken()).catch((error) => {
 			console.error('Error fetching usage info:', error);
 		});
 
@@ -207,7 +208,7 @@
 				on:click={async () => {
 					const res = await userSignOut();
 					user.set(null);
-					localStorage.removeItem('token');
+					setAccessToken(null);
 
 					location.href = res?.redirect_url ?? '/auth';
 					show = false;

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { toast } from 'svelte-sonner';
 	import dayjs from 'dayjs';
 	import { getContext, createEventDispatcher } from 'svelte';
@@ -30,7 +31,7 @@
 	let showClearConfirmDialog = false;
 
 	let onClearConfirmed = async () => {
-		const res = await deleteMemoriesByUserId(localStorage.token).catch((error) => {
+		const res = await deleteMemoriesByUserId(getAccessToken()).catch((error) => {
 			toast.error(`${error}`);
 			return null;
 		});
@@ -44,7 +45,7 @@
 
 	$: if (show && memories.length === 0 && loading) {
 		(async () => {
-			memories = await getMemories(localStorage.token);
+			memories = await getMemories(getAccessToken());
 			loading = false;
 		})();
 	}
@@ -137,7 +138,7 @@
 															class="self-center w-fit text-sm px-2 py-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-xl"
 															on:click={async () => {
 																const res = await deleteMemoryById(
-																	localStorage.token,
+																	getAccessToken(),
 																	memory.id
 																).catch((error) => {
 																	toast.error(`${error}`);
@@ -146,7 +147,7 @@
 
 																if (res) {
 																	toast.success($i18n.t('Memory deleted successfully'));
-																	memories = await getMemories(localStorage.token);
+																	memories = await getMemories(getAccessToken());
 																}
 															}}
 														>
@@ -217,7 +218,7 @@
 <AddMemoryModal
 	bind:show={showAddMemoryModal}
 	on:save={async () => {
-		memories = await getMemories(localStorage.token);
+		memories = await getMemories(getAccessToken());
 	}}
 />
 
@@ -225,6 +226,6 @@
 	bind:show={showEditMemoryModal}
 	memory={selectedMemory}
 	on:save={async () => {
-		memories = await getMemories(localStorage.token);
+		memories = await getMemories(getAccessToken());
 	}}
 />

@@ -1,4 +1,5 @@
 <script>
+	import { getAccessToken, setAccessToken } from '$lib/utils/tokenStore';
 	import { io } from 'socket.io-client';
 	import { spring } from 'svelte/motion';
 	import PyodideWorker from '$lib/workers/pyodide.worker?worker';
@@ -77,7 +78,7 @@
 			randomizationFactor: 0.5,
 			path: '/ws/socket.io',
 			transports: enableWebsocket ? ['websocket'] : ['polling', 'websocket'],
-			auth: { token: localStorage.token }
+			auth: { token: getAccessToken() }
 		});
 
 		await socket.set(_socket);
@@ -88,9 +89,9 @@
 
 		_socket.on('connect', () => {
 			console.log('connected', _socket.id);
-			if (localStorage.getItem('token')) {
+			if (getAccessToken()) {
 				// Emit user-join event with auth token
-				_socket.emit('user-join', { auth: { token: localStorage.token } });
+				_socket.emit('user-join', { auth: { token: getAccessToken() } });
 			} else {
 				console.warn('No token found in localStorage, user-join event not emitted');
 			}
@@ -230,7 +231,7 @@
 			} else if (auth_type === 'none') {
 				// No authentication
 			} else if (auth_type === 'session') {
-				toolServerToken = localStorage.token;
+				toolServerToken = getAccessToken();
 			}
 
 			const res = await executeToolServer(
@@ -313,9 +314,9 @@
 				}
 			} else if (type === 'chat:title') {
 				currentChatPage.set(1);
-				await chats.set(await getChatList(localStorage.token, $currentChatPage));
+				await chats.set(await getChatList(getAccessToken(), $currentChatPage));
 			} else if (type === 'chat:tags') {
-				tags.set(await getAllTags(localStorage.token));
+				tags.set(await getAllTags(getAccessToken()));
 			}
 		} else if (data?.session_id === $socket.id) {
 			if (type === 'execute:python') {
@@ -476,7 +477,7 @@
 		if (now >= exp - TOKEN_EXPIRY_BUFFER) {
 			const res = await userSignOut();
 			user.set(null);
-			localStorage.removeItem('token');
+			setAccessToken(null);
 
 			location.href = res?.redirect_url ?? '/auth';
 		}
@@ -625,25 +626,21 @@
 				const currentUrl = `${window.location.pathname}${window.location.search}`;
 				const encodedUrl = encodeURIComponent(currentUrl);
 
-				if (localStorage.token) {
-					// Get Session User Info
-					const sessionUser = await getSessionUser(localStorage.token).catch((error) => {
-						toast.error(`${error}`);
-						return null;
-					});
+				// Get Session User Info (falls back to HttpOnly cookie when no token is cached)
+				const sessionUser = await getSessionUser(getAccessToken()).catch((error) => {
+					toast.error(`${error}`);
+					return null;
+				});
 
-					if (sessionUser) {
-						await user.set(sessionUser);
-						await config.set(await getBackendConfig());
-					} else {
-						// Redirect Invalid Session User to /auth Page
-						localStorage.removeItem('token');
-						await goto(`/auth?redirect=${encodedUrl}`);
-					}
+				if (sessionUser) {
+					setAccessToken(sessionUser.token);
+					await user.set(sessionUser);
+					await config.set(await getBackendConfig());
 				} else {
 					// Don't redirect if we're already on the auth page
 					// Needed because we pass in tokens from OAuth logins via URL fragments
 					if ($page.url.pathname !== '/auth') {
+						setAccessToken(null);
 						await goto(`/auth?redirect=${encodedUrl}`);
 					}
 				}

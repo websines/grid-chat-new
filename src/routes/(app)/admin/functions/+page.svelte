@@ -1,4 +1,5 @@
 <script>
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { onMount } from 'svelte';
 	import { functions } from '$lib/stores';
 
@@ -8,7 +9,7 @@
 	onMount(async () => {
 		await Promise.all([
 			(async () => {
-				functions.set(await getFunctions(localStorage.token));
+				functions.set(await getFunctions(getAccessToken()));
 			})()
 		]);
 	});

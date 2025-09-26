@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	export let show = false;
 	export let selectedModelId = '';
 
@@ -185,7 +186,7 @@ Based on the user's instruction, update and enhance the existing notes or select
 		);
 
 		const [res, controller] = await chatCompletion(
-			localStorage.token,
+			getAccessToken(),
 			{
 				model: model.id,
 				stream: true,

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { toast } from 'svelte-sonner';
 	import { createEventDispatcher } from 'svelte';
 	import { onMount, getContext } from 'svelte';
@@ -47,7 +48,7 @@
 			loading = true;
 
 			const res = await addUser(
-				localStorage.token,
+				getAccessToken(),
 				_user.name,
 				_user.email,
 				_user.password,
@@ -84,7 +85,7 @@
 								['admin', 'user', 'pending'].includes(columns[3].toLowerCase())
 							) {
 								const res = await addUser(
-									localStorage.token,
+									getAccessToken(),
 									columns[0],
 									columns[1],
 									columns[2],

@@ -1,4 +1,5 @@
 <script>
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { getContext, createEventDispatcher, onMount, onDestroy, tick } from 'svelte';
 
 	const i18n = getContext('i18n');
@@ -130,7 +131,7 @@
 									return;
 								}
 								// Move the folder
-								const res = await updateFolderParentIdById(localStorage.token, id, folderId).catch(
+								const res = await updateFolderParentIdById(getAccessToken(), id, folderId).catch(
 									(error) => {
 										toast.error(`${error}`);
 										return null;
@@ -143,12 +144,12 @@
 							} else if (type === 'chat') {
 								open = true;
 
-								let chat = await getChatById(localStorage.token, id).catch((error) => {
+								let chat = await getChatById(getAccessToken(), id).catch((error) => {
 									return null;
 								});
 								if (!chat && item) {
 									chat = await importChat(
-										localStorage.token,
+										getAccessToken(),
 										item.chat,
 										item?.meta ?? {},
 										false,
@@ -163,7 +164,7 @@
 
 								// Move the chat
 								const res = await updateChatFolderIdById(
-									localStorage.token,
+									getAccessToken(),
 									chat.id,
 									folderId
 								).catch((error) => {
@@ -271,7 +272,7 @@
 	let showDeleteConfirm = false;
 
 	const deleteHandler = async () => {
-		const res = await deleteFolderById(localStorage.token, folderId).catch((error) => {
+		const res = await deleteFolderById(getAccessToken(), folderId).catch((error) => {
 			toast.error(`${error}`);
 			return null;
 		});
@@ -293,7 +294,7 @@
 		name = name.trim();
 		folders[folderId].name = name;
 
-		const res = await updateFolderById(localStorage.token, folderId, {
+		const res = await updateFolderById(getAccessToken(), folderId, {
 			name,
 			...(meta ? { meta } : {}),
 			...(data ? { data } : {})
@@ -322,7 +323,7 @@
 	};
 
 	const isExpandedUpdateHandler = async () => {
-		const res = await updateFolderIsExpandedById(localStorage.token, folderId, open).catch(
+		const res = await updateFolderIsExpandedById(getAccessToken(), folderId, open).catch(
 			(error) => {
 				toast.error(`${error}`);
 				return null;
@@ -356,7 +357,7 @@
 	};
 
 	const exportHandler = async () => {
-		const chats = await getChatsByFolderId(localStorage.token, folderId).catch((error) => {
+		const chats = await getChatsByFolderId(getAccessToken(), folderId).catch((error) => {
 			toast.error(`${error}`);
 			return null;
 		});

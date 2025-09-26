@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { toast } from 'svelte-sonner';
 
 	import { config, functions, models, settings, tools, user } from '$lib/stores';
@@ -51,11 +52,11 @@
 	const getUserValves = async () => {
 		loading = true;
 		if (tab === 'tools') {
-			valves = await getToolUserValvesById(localStorage.token, selectedId);
-			valvesSpec = await getToolUserValvesSpecById(localStorage.token, selectedId);
+			valves = await getToolUserValvesById(getAccessToken(), selectedId);
+			valvesSpec = await getToolUserValvesSpecById(getAccessToken(), selectedId);
 		} else if (tab === 'functions') {
-			valves = await getFunctionUserValvesById(localStorage.token, selectedId);
-			valvesSpec = await getFunctionUserValvesSpecById(localStorage.token, selectedId);
+			valves = await getFunctionUserValvesById(getAccessToken(), selectedId);
+			valvesSpec = await getFunctionUserValvesSpecById(getAccessToken(), selectedId);
 		}
 
 		if (valvesSpec) {
@@ -80,7 +81,7 @@
 			}
 
 			if (tab === 'tools') {
-				const res = await updateToolUserValvesById(localStorage.token, selectedId, valves).catch(
+				const res = await updateToolUserValvesById(getAccessToken(), selectedId, valves).catch(
 					(error) => {
 						toast.error(`${error}`);
 						return null;
@@ -93,7 +94,7 @@
 				}
 			} else if (tab === 'functions') {
 				const res = await updateFunctionUserValvesById(
-					localStorage.token,
+					getAccessToken(),
 					selectedId,
 					valves
 				).catch((error) => {
@@ -125,10 +126,10 @@
 		loading = true;
 
 		if ($functions === null) {
-			functions.set(await getFunctions(localStorage.token));
+			functions.set(await getFunctions(getAccessToken()));
 		}
 		if ($tools === null) {
-			tools.set(await getTools(localStorage.token));
+			tools.set(await getTools(getAccessToken()));
 		}
 
 		loading = false;

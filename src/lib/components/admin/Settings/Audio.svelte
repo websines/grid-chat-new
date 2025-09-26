@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { toast } from 'svelte-sonner';
 	import { createEventDispatcher, onMount, getContext } from 'svelte';
 	const dispatch = createEventDispatcher();
@@ -60,7 +61,7 @@
 			models = [];
 		} else {
 			const res = await _getModels(
-				localStorage.token,
+				getAccessToken(),
 				$config?.features?.enable_direct_connections && ($settings?.directConnections ?? null)
 			).catch((e) => {
 				toast.error(`${e}`);
@@ -85,7 +86,7 @@
 				}
 			}, 100);
 		} else {
-			const res = await _getVoices(localStorage.token).catch((e) => {
+			const res = await _getVoices(getAccessToken()).catch((e) => {
 				toast.error(`${e}`);
 			});
 
@@ -98,7 +99,7 @@
 	};
 
 	const updateConfigHandler = async () => {
-		const res = await updateAudioConfig(localStorage.token, {
+		const res = await updateAudioConfig(getAccessToken(), {
 			tts: {
 				OPENAI_API_BASE_URL: TTS_OPENAI_API_BASE_URL,
 				OPENAI_API_KEY: TTS_OPENAI_API_KEY,
@@ -140,7 +141,7 @@
 	};
 
 	onMount(async () => {
-		const res = await getAudioConfig(localStorage.token);
+		const res = await getAudioConfig(getAccessToken());
 
 		if (res) {
 			console.log(res);

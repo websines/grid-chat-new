@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken, setAccessToken } from '$lib/utils/tokenStore';
 	import DOMPurify from 'dompurify';
 	import { marked } from 'marked';
 
@@ -11,7 +12,7 @@
 	let adminDetails = null;
 
 	onMount(async () => {
-		adminDetails = await getAdminDetails(localStorage.token).catch((err) => {
+		adminDetails = await getAdminDetails(getAccessToken()).catch((err) => {
 			console.error(err);
 			return null;
 		});
@@ -72,7 +73,7 @@
 					<button
 						class="text-xs text-center w-full mt-2 text-gray-400 underline"
 						on:click={async () => {
-							localStorage.removeItem('token');
+							setAccessToken(null);
 							location.href = '/auth';
 						}}>{$i18n.t('Sign Out')}</button
 					>

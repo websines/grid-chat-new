@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { getContext } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	import { updateUserPassword } from '$lib/apis/auths';
@@ -13,7 +14,7 @@
 
 	const updatePasswordHandler = async () => {
 		if (newPassword === newPasswordConfirm) {
-			const res = await updateUserPassword(localStorage.token, currentPassword, newPassword).catch(
+			const res = await updateUserPassword(getAccessToken(), currentPassword, newPassword).catch(
 				(error) => {
 					toast.error(`${error}`);
 					return null;

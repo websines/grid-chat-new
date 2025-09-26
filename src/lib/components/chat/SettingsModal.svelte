@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { getContext, onMount, tick } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	import { config, models, settings, user } from '$lib/stores';
@@ -521,12 +522,12 @@
 		console.log(updated);
 		await settings.set({ ...$settings, ...updated });
 		await models.set(await getModels());
-		await updateUserSettings(localStorage.token, { ui: $settings });
+		await updateUserSettings(getAccessToken(), { ui: $settings });
 	};
 
 	const getModels = async () => {
 		return await _getModels(
-			localStorage.token,
+			getAccessToken(),
 			$config?.features?.enable_direct_connections && ($settings?.directConnections ?? null)
 		);
 	};

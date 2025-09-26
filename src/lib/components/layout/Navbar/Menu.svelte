@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { toast } from 'svelte-sonner';
 	import { DropdownMenu } from 'bits-ui';
 	import { getContext, tick } from 'svelte';
@@ -234,7 +235,7 @@
 			if (chat.id === 'local' || $temporaryChatEnabled) {
 				chatObj = chat;
 			} else {
-				chatObj = await getChatById(localStorage.token, chat.id);
+				chatObj = await getChatById(getAccessToken(), chat.id);
 			}
 
 			let blob = new Blob([JSON.stringify([chatObj])], {

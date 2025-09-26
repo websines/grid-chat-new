@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { toast } from 'svelte-sonner';
 
 	import DOMPurify from 'dompurify';
@@ -116,7 +117,7 @@
 		responseContent = '';
 
 		let res;
-		[res, controller] = await chatCompletion(localStorage.token, {
+		[res, controller] = await chatCompletion(getAccessToken(), {
 			model: model,
 			messages: [
 				...messages,

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import DOMPurify from 'dompurify';
 
 	import { getVersionUpdates, getWebhookUrl, updateWebhookUrl } from '$lib/apis';
@@ -52,7 +53,7 @@
 
 	const checkForVersionUpdates = async () => {
 		updateAvailable = null;
-		version = await getVersionUpdates(localStorage.token).catch((error) => {
+		version = await getVersionUpdates(getAccessToken()).catch((error) => {
 			return {
 				current: WEBUI_VERSION,
 				latest: WEBUI_VERSION
@@ -67,7 +68,7 @@
 
 	const updateLdapServerHandler = async () => {
 		if (!ENABLE_LDAP) return;
-		const res = await updateLdapServer(localStorage.token, LDAP_SERVER).catch((error) => {
+		const res = await updateLdapServer(getAccessToken(), LDAP_SERVER).catch((error) => {
 			toast.error(`${error}`);
 			return null;
 		});
@@ -77,9 +78,9 @@
 	};
 
 	const updateHandler = async () => {
-		webhookUrl = await updateWebhookUrl(localStorage.token, webhookUrl);
-		const res = await updateAdminConfig(localStorage.token, adminConfig);
-		await updateLdapConfig(localStorage.token, ENABLE_LDAP);
+		webhookUrl = await updateWebhookUrl(getAccessToken(), webhookUrl);
+		const res = await updateAdminConfig(getAccessToken(), adminConfig);
+		await updateLdapConfig(getAccessToken(), ENABLE_LDAP);
 		await updateLdapServerHandler();
 
 		if (res) {
@@ -96,18 +97,18 @@
 
 		await Promise.all([
 			(async () => {
-				adminConfig = await getAdminConfig(localStorage.token);
+				adminConfig = await getAdminConfig(getAccessToken());
 			})(),
 
 			(async () => {
-				webhookUrl = await getWebhookUrl(localStorage.token);
+				webhookUrl = await getWebhookUrl(getAccessToken());
 			})(),
 			(async () => {
-				LDAP_SERVER = await getLdapServer(localStorage.token);
+				LDAP_SERVER = await getLdapServer(getAccessToken());
 			})()
 		]);
 
-		const ldapConfig = await getLdapConfig(localStorage.token);
+		const ldapConfig = await getLdapConfig(getAccessToken());
 		ENABLE_LDAP = ldapConfig.ENABLE_LDAP;
 	});
 </script>

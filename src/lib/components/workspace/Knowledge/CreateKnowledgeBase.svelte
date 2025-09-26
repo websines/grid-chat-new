@@ -1,4 +1,5 @@
 <script>
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { goto } from '$app/navigation';
 	import { getContext } from 'svelte';
 	const i18n = getContext('i18n');
@@ -27,7 +28,7 @@
 		}
 
 		const res = await createNewKnowledge(
-			localStorage.token,
+			getAccessToken(),
 			name,
 			description,
 			accessControl
@@ -37,7 +38,7 @@
 
 		if (res) {
 			toast.success($i18n.t('Knowledge created successfully.'));
-			knowledge.set(await getKnowledgeBases(localStorage.token));
+			knowledge.set(await getKnowledgeBases(getAccessToken()));
 			goto(`/workspace/knowledge/${res.id}`);
 		}
 

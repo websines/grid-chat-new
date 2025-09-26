@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import hljs from 'highlight.js';
 	import { toast } from 'svelte-sonner';
 	import { getContext, onMount, tick, onDestroy } from 'svelte';
@@ -138,7 +139,7 @@
 		executing = true;
 
 		if ($config?.code?.engine === 'jupyter') {
-			const output = await executeCode(localStorage.token, code).catch((error) => {
+			const output = await executeCode(getAccessToken(), code).catch((error) => {
 				toast.error(`${error}`);
 				return null;
 			});

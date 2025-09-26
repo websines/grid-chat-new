@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import fileSaver from 'file-saver';
 	const { saveAs } = fileSaver;
 
@@ -15,14 +16,14 @@
 	export let saveHandler: Function;
 
 	const exportAllUserChats = async () => {
-		let blob = new Blob([JSON.stringify(await getAllUserChats(localStorage.token))], {
+		let blob = new Blob([JSON.stringify(await getAllUserChats(getAccessToken()))], {
 			type: 'application/json'
 		});
 		saveAs(blob, `all-chats-export-${Date.now()}.json`);
 	};
 
 	const exportUsers = async () => {
-		const users = await getAllUsers(localStorage.token);
+		const users = await getAllUsers(getAccessToken());
 
 		const headers = ['id', 'name', 'email', 'role'];
 
@@ -45,7 +46,7 @@
 	};
 
 	onMount(async () => {
-		// permissions = await getUserPermissions(localStorage.token);
+		// permissions = await getUserPermissions(getAccessToken());
 	});
 </script>
 
@@ -69,7 +70,7 @@
 					const reader = new FileReader();
 
 					reader.onload = async (e) => {
-						const res = await importConfig(localStorage.token, JSON.parse(e.target.result)).catch(
+						const res = await importConfig(getAccessToken(), JSON.parse(e.target.result)).catch(
 							(error) => {
 								toast.error(`${error}`);
 							}
@@ -116,7 +117,7 @@
 				type="button"
 				class=" flex rounded-md py-2 px-3 w-full hover:bg-gray-200 dark:hover:bg-gray-800 transition"
 				on:click={async () => {
-					const config = await exportConfig(localStorage.token);
+					const config = await exportConfig(getAccessToken());
 					const blob = new Blob([JSON.stringify(config)], {
 						type: 'application/json'
 					});
@@ -155,7 +156,7 @@
 						on:click={() => {
 							// exportAllUserChats();
 
-							downloadDatabase(localStorage.token).catch((error) => {
+							downloadDatabase(getAccessToken()).catch((error) => {
 								toast.error(`${error}`);
 							});
 						}}

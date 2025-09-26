@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { toast } from 'svelte-sonner';
 	import fileSaver from 'file-saver';
 	const { saveAs } = fileSaver;
@@ -69,7 +70,7 @@
 		.sort((a, b) => a.type.localeCompare(b.type) || a.name.localeCompare(b.name));
 
 	const shareHandler = async (func) => {
-		const item = await getFunctionById(localStorage.token, func.id).catch((error) => {
+		const item = await getFunctionById(getAccessToken(), func.id).catch((error) => {
 			toast.error(`${error}`);
 			return null;
 		});
@@ -96,7 +97,7 @@
 	};
 
 	const cloneHandler = async (func) => {
-		const _function = await getFunctionById(localStorage.token, func.id).catch((error) => {
+		const _function = await getFunctionById(getAccessToken(), func.id).catch((error) => {
 			toast.error(`${error}`);
 			return null;
 		});
@@ -112,7 +113,7 @@
 	};
 
 	const exportHandler = async (func) => {
-		const _function = await getFunctionById(localStorage.token, func.id).catch((error) => {
+		const _function = await getFunctionById(getAccessToken(), func.id).catch((error) => {
 			toast.error(`${error}`);
 			return null;
 		});
@@ -126,7 +127,7 @@
 	};
 
 	const deleteHandler = async (func) => {
-		const res = await deleteFunctionById(localStorage.token, func.id).catch((error) => {
+		const res = await deleteFunctionById(getAccessToken(), func.id).catch((error) => {
 			toast.error(`${error}`);
 			return null;
 		});
@@ -134,10 +135,10 @@
 		if (res) {
 			toast.success($i18n.t('Function deleted successfully'));
 
-			functions.set(await getFunctions(localStorage.token));
+			functions.set(await getFunctions(getAccessToken()));
 			models.set(
 				await getModels(
-					localStorage.token,
+					getAccessToken(),
 					$config?.features?.enable_direct_connections && ($settings?.directConnections ?? null),
 					false,
 					true
@@ -147,7 +148,7 @@
 	};
 
 	const toggleGlobalHandler = async (func) => {
-		const res = await toggleGlobalById(localStorage.token, func.id).catch((error) => {
+		const res = await toggleGlobalById(getAccessToken(), func.id).catch((error) => {
 			toast.error(`${error}`);
 		});
 
@@ -162,10 +163,10 @@
 					: toast.success($i18n.t('Function is now globally disabled'));
 			}
 
-			functions.set(await getFunctions(localStorage.token));
+			functions.set(await getFunctions(getAccessToken()));
 			models.set(
 				await getModels(
-					localStorage.token,
+					getAccessToken(),
 					$config?.features?.enable_direct_connections && ($settings?.directConnections ?? null),
 					false,
 					true
@@ -212,7 +213,7 @@
 <ImportModal
 	bind:show={showImportModal}
 	loadUrlHandler={async (url) => {
-		return await loadFunctionByUrl(localStorage.token, url);
+		return await loadFunctionByUrl(getAccessToken(), url);
 	}}
 	onImport={(func) => {
 		sessionStorage.function = JSON.stringify({
@@ -457,10 +458,10 @@
 						<Switch
 							bind:state={func.is_active}
 							on:change={async (e) => {
-								toggleFunctionById(localStorage.token, func.id);
+								toggleFunctionById(getAccessToken(), func.id);
 								models.set(
 									await getModels(
-										localStorage.token,
+										getAccessToken(),
 										$config?.features?.enable_direct_connections &&
 											($settings?.directConnections ?? null),
 										false,
@@ -525,7 +526,7 @@
 			<button
 				class="flex text-xs items-center space-x-1 px-3 py-1.5 rounded-xl bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200 transition"
 				on:click={async () => {
-					const _functions = await exportFunctions(localStorage.token).catch((error) => {
+					const _functions = await exportFunctions(getAccessToken()).catch((error) => {
 						toast.error(`${error}`);
 						return null;
 					});
@@ -609,7 +610,7 @@
 		await tick();
 		models.set(
 			await getModels(
-				localStorage.token,
+				getAccessToken(),
 				$config?.features?.enable_direct_connections && ($settings?.directConnections ?? null),
 				false,
 				true
@@ -632,17 +633,17 @@
 					func = func.function;
 				}
 
-				const res = await createNewFunction(localStorage.token, func).catch((error) => {
+				const res = await createNewFunction(getAccessToken(), func).catch((error) => {
 					toast.error(`${error}`);
 					return null;
 				});
 			}
 
 			toast.success($i18n.t('Functions imported successfully'));
-			functions.set(await getFunctions(localStorage.token));
+			functions.set(await getFunctions(getAccessToken()));
 			models.set(
 				await getModels(
-					localStorage.token,
+					getAccessToken(),
 					$config?.features?.enable_direct_connections && ($settings?.directConnections ?? null),
 					false,
 					true

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import dayjs from 'dayjs';
 	import { onMount, tick, getContext } from 'svelte';
 
@@ -31,7 +32,7 @@
 
 	const getItemsPage = async () => {
 		itemsLoading = true;
-		let res = await getNoteList(localStorage.token, page).catch(() => {
+		let res = await getNoteList(getAccessToken(), page).catch(() => {
 			return [];
 		});
 

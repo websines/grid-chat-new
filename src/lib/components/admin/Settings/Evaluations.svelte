@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { toast } from 'svelte-sonner';
 	import { models, settings, user, config } from '$lib/stores';
 	import { createEventDispatcher, onMount, getContext, tick } from 'svelte';
@@ -20,7 +21,7 @@
 	let showAddModel = false;
 
 	const submitHandler = async () => {
-		evaluationConfig = await updateConfig(localStorage.token, evaluationConfig).catch((err) => {
+		evaluationConfig = await updateConfig(getAccessToken(), evaluationConfig).catch((err) => {
 			toast.error(err);
 			return null;
 		});
@@ -29,7 +30,7 @@
 			toast.success($i18n.t('Settings saved successfully!'));
 			models.set(
 				await getModels(
-					localStorage.token,
+					getAccessToken(),
 					$config?.features?.enable_direct_connections && ($settings?.directConnections ?? null)
 				)
 			);
@@ -43,7 +44,7 @@
 		await submitHandler();
 		models.set(
 			await getModels(
-				localStorage.token,
+				getAccessToken(),
 				$config?.features?.enable_direct_connections && ($settings?.directConnections ?? null)
 			)
 		);
@@ -56,7 +57,7 @@
 		await submitHandler();
 		models.set(
 			await getModels(
-				localStorage.token,
+				getAccessToken(),
 				$config?.features?.enable_direct_connections && ($settings?.directConnections ?? null)
 			)
 		);
@@ -70,7 +71,7 @@
 		await submitHandler();
 		models.set(
 			await getModels(
-				localStorage.token,
+				getAccessToken(),
 				$config?.features?.enable_direct_connections && ($settings?.directConnections ?? null)
 			)
 		);
@@ -78,7 +79,7 @@
 
 	onMount(async () => {
 		if ($user?.role === 'admin') {
-			evaluationConfig = await getConfig(localStorage.token).catch((err) => {
+			evaluationConfig = await getConfig(getAccessToken()).catch((err) => {
 				toast.error(err);
 				return null;
 			});

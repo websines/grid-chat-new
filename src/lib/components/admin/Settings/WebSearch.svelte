@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { getRAGConfig, updateRAGConfig } from '$lib/apis/retrieval';
 	import Switch from '$lib/components/common/Switch.svelte';
 
@@ -60,7 +61,7 @@
 			webConfig.YOUTUBE_LOADER_LANGUAGE = [];
 		}
 
-		const res = await updateRAGConfig(localStorage.token, {
+		const res = await updateRAGConfig(getAccessToken(), {
 			web: webConfig
 		});
 
@@ -69,7 +70,7 @@
 	};
 
 	onMount(async () => {
-		const res = await getRAGConfig(localStorage.token);
+		const res = await getRAGConfig(getAccessToken());
 
 		if (res) {
 			webConfig = res.web;

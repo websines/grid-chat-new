@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { toast } from 'svelte-sonner';
 	import { getContext, onMount } from 'svelte';
 	const i18n = getContext('i18n');
@@ -69,7 +70,7 @@
 			console.debug(model);
 
 			updateModelId = model.id;
-			const [res, controller] = await pullModel(localStorage.token, model.id, urlIdx).catch(
+			const [res, controller] = await pullModel(getAccessToken(), model.id, urlIdx).catch(
 				(error) => {
 					toast.error(`${error}`);
 					return null;
@@ -143,7 +144,7 @@
 			return;
 		}
 
-		const [res, controller] = await pullModel(localStorage.token, sanitizedModelTag, urlIdx).catch(
+		const [res, controller] = await pullModel(getAccessToken(), sanitizedModelTag, urlIdx).catch(
 			(error) => {
 				toast.error(`${error}`);
 				return null;
@@ -237,7 +238,7 @@
 
 				models.set(
 					await getModels(
-						localStorage.token,
+						getAccessToken(),
 						$config?.features?.enable_direct_connections && ($settings?.directConnections ?? null)
 					)
 				);
@@ -269,14 +270,14 @@
 			if (file) {
 				uploadMessage = 'Uploading...';
 
-				fileResponse = await uploadModel(localStorage.token, file, urlIdx).catch((error) => {
+				fileResponse = await uploadModel(getAccessToken(), file, urlIdx).catch((error) => {
 					toast.error(`${error}`);
 					return null;
 				});
 			}
 		} else {
 			uploadProgress = 0;
-			fileResponse = await downloadModel(localStorage.token, modelFileUrl, urlIdx).catch(
+			fileResponse = await downloadModel(getAccessToken(), modelFileUrl, urlIdx).catch(
 				(error) => {
 					toast.error(`${error}`);
 					return null;
@@ -330,7 +331,7 @@
 
 		if (uploaded) {
 			const res = await createModel(
-				localStorage.token,
+				getAccessToken(),
 				`${name}:latest`,
 				`FROM @${modelFileDigest}\n${modelFileContent}`
 			);
@@ -401,14 +402,14 @@
 
 		models.set(
 			await getModels(
-				localStorage.token,
+				getAccessToken(),
 				$config?.features?.enable_direct_connections && ($settings?.directConnections ?? null)
 			)
 		);
 	};
 
 	const deleteModelHandler = async () => {
-		const res = await deleteModel(localStorage.token, deleteModelTag, urlIdx).catch((error) => {
+		const res = await deleteModel(getAccessToken(), deleteModelTag, urlIdx).catch((error) => {
 			toast.error(`${error}`);
 		});
 
@@ -419,7 +420,7 @@
 		deleteModelTag = '';
 		models.set(
 			await getModels(
-				localStorage.token,
+				getAccessToken(),
 				$config?.features?.enable_direct_connections && ($settings?.directConnections ?? null)
 			)
 		);
@@ -436,7 +437,7 @@
 			MODEL_DOWNLOAD_POOL.set({
 				...$MODEL_DOWNLOAD_POOL
 			});
-			await deleteModel(localStorage.token, model);
+			await deleteModel(getAccessToken(), model);
 			toast.success($i18n.t('{{model}} download has been canceled', { model: model }));
 		}
 	};
@@ -455,7 +456,7 @@
 		}
 
 		const res = await createModel(
-			localStorage.token,
+			getAccessToken(),
 			{
 				model: createModelName,
 				...modelObject
@@ -523,7 +524,7 @@
 
 		models.set(
 			await getModels(
-				localStorage.token,
+				getAccessToken(),
 				$config?.features?.enable_direct_connections && ($settings?.directConnections ?? null)
 			)
 		);
@@ -538,7 +539,7 @@
 
 	const init = async () => {
 		loading = true;
-		ollamaModels = await getOllamaModels(localStorage.token, urlIdx).catch((error) => {
+		ollamaModels = await getOllamaModels(getAccessToken(), urlIdx).catch((error) => {
 			toast.error(`${error}`);
 			return null;
 		});

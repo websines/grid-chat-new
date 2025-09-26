@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAccessToken } from '$lib/utils/tokenStore';
 	import { toast } from 'svelte-sonner';
 	import { createEventDispatcher, onMount, getContext, tick } from 'svelte';
 
@@ -24,7 +25,7 @@
 
 	const getModels = async () => {
 		const models = await _getModels(
-			localStorage.token,
+			getAccessToken(),
 			$config?.features?.enable_direct_connections && ($settings?.directConnections ?? null),
 			false,
 			true
@@ -70,7 +71,7 @@
 				}
 			}
 
-			const res = await updateOpenAIConfig(localStorage.token, {
+			const res = await updateOpenAIConfig(getAccessToken(), {
 				ENABLE_OPENAI_API: ENABLE_OPENAI_API,
 				OPENAI_API_BASE_URLS: OPENAI_API_BASE_URLS,
 				OPENAI_API_KEYS: OPENAI_API_KEYS,
@@ -91,7 +92,7 @@
 			// Remove trailing slashes
 			OLLAMA_BASE_URLS = OLLAMA_BASE_URLS.map((url) => url.replace(/\/$/, ''));
 
-			const res = await updateOllamaConfig(localStorage.token, {
+			const res = await updateOllamaConfig(getAccessToken(), {
 				ENABLE_OLLAMA_API: ENABLE_OLLAMA_API,
 				OLLAMA_BASE_URLS: OLLAMA_BASE_URLS,
 				OLLAMA_API_CONFIGS: OLLAMA_API_CONFIGS
@@ -107,7 +108,7 @@
 	};
 
 	const updateConnectionsHandler = async () => {
-		const res = await setConnectionsConfig(localStorage.token, connectionsConfig).catch((error) => {
+		const res = await setConnectionsConfig(getAccessToken(), connectionsConfig).catch((error) => {
 			toast.error(`${error}`);
 		});
 
@@ -143,13 +144,13 @@
 
 			await Promise.all([
 				(async () => {
-					ollamaConfig = await getOllamaConfig(localStorage.token);
+					ollamaConfig = await getOllamaConfig(getAccessToken());
 				})(),
 				(async () => {
-					openaiConfig = await getOpenAIConfig(localStorage.token);
+					openaiConfig = await getOpenAIConfig(getAccessToken());
 				})(),
 				(async () => {
-					connectionsConfig = await getConnectionsConfig(localStorage.token);
+					connectionsConfig = await getConnectionsConfig(getAccessToken());
 				})()
 			]);
 
@@ -177,7 +178,7 @@
 					if (!(OPENAI_API_CONFIGS[idx]?.enable ?? true)) {
 						return;
 					}
-					const res = await getOpenAIModels(localStorage.token, idx);
+					const res = await getOpenAIModels(getAccessToken(), idx);
 					if (res.pipelines) {
 						pipelineUrls[url] = true;
 					}

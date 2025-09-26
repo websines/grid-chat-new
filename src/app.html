@@ -82,17 +82,46 @@
 
 				const logo = document.createElement('img');
 				logo.id = 'logo';
+				logo.alt = 'Open WebUI logo';
 				logo.style =
 					'position: absolute; width: auto; height: 6rem; top: 44%; left: 50%; transform: translateX(-50%); display:block;';
 				logo.src = isDarkMode ? '/static/splash-dark.png' : '/static/splash.png';
 
-				document.addEventListener('DOMContentLoaded', function () {
+				const aipgLogo = document.createElement('img');
+				aipgLogo.id = 'aipg-logo';
+				aipgLogo.alt = 'AIPowerGrid logo';
+				aipgLogo.style =
+					'position: absolute; width: auto; height: 3.25rem; top: calc(44% + 6.75rem); left: 50%; transform: translateX(-50%); display:block; opacity: 0.85;';
+				aipgLogo.src = '/branding/aipg-logo.png';
+
+				const insertSplashBranding = () => {
 					const splash = document.getElementById('splash-screen');
-					if (document.documentElement.classList.contains('her')) {
+					if (!splash) {
 						return;
 					}
 
-					if (splash) splash.prepend(logo);
+					if (!document.getElementById('logo')) {
+						splash.prepend(logo);
+					}
+
+					if (!document.getElementById('aipg-logo')) {
+						splash.appendChild(aipgLogo);
+					}
+				};
+
+				document.addEventListener('DOMContentLoaded', function () {
+					if (document.documentElement.classList.contains('her')) {
+						const container = document.getElementById('splash-content');
+						if (container) {
+							const herLogo = document.getElementById('aipg-logo-her');
+							if (herLogo) {
+								herLogo.style.display = 'block';
+							}
+						}
+						return;
+					}
+
+					insertSplashBranding();
 				});
 			})();
 		</script>
@@ -116,6 +145,7 @@
 			</style>
 
 			<div
+				id="splash-content"
 				style="
 					position: absolute;
 					top: 33%;
@@ -134,6 +164,13 @@
 					style="width: auto; height: 13rem"
 					src="/static/splash.png"
 					class="animate-pulse-fast"
+				/>
+
+				<img
+					id="aipg-logo-her"
+					style="width: auto; height: 4.5rem; margin-top: 1.25rem; display: none"
+					src="/branding/aipg-logo.png"
+					alt="AIPowerGrid logo"
 				/>
 
 				<div style="position: relative; width: 24rem; margin-top: 0.5rem">
@@ -192,6 +229,11 @@
 		display: none;
 	}
 
+	#aipg-logo-her {
+		display: none;
+		opacity: 0.85;
+	}
+
 	#progress-background {
 		display: none;
 	}
@@ -207,6 +249,10 @@
 	html.her #logo-her {
 		display: block;
 		filter: invert(1);
+	}
+
+	html.her #aipg-logo-her {
+		display: block;
 	}
 
 	html.her #progress-background {

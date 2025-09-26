@@ -80,11 +80,17 @@
 	export let autoScroll = false;
 	export let generating = false;
 
-	export let atSelectedModel: Model | undefined = undefined;
-	export let selectedModels: [''];
+export let atSelectedModel: Model | undefined = undefined;
+export let selectedModels: string[] = [];
 
-	let selectedModelIds = [];
-	$: selectedModelIds = atSelectedModel !== undefined ? [atSelectedModel.id] : selectedModels;
+let normalizedSelectedModels: string[] = [];
+$: normalizedSelectedModels = Array.isArray(selectedModels) ? selectedModels : [];
+
+let activeModelIds: string[] = [];
+$: activeModelIds = atSelectedModel?.id ? [atSelectedModel.id] : normalizedSelectedModels;
+
+let selectedModelIds: string[] = [];
+$: selectedModelIds = activeModelIds;
 
 	export let history;
 	export let taskIds = null;
@@ -92,10 +98,14 @@
 	export let prompt = '';
 	export let files = [];
 
-	export let toolServers = [];
+export let toolServers = [];
 
-	export let selectedToolIds = [];
-	export let selectedFilterIds = [];
+export let selectedToolIds = [];
+export let selectedFilterIds = [];
+
+$: toolServers = Array.isArray(toolServers) ? toolServers : [];
+$: selectedToolIds = Array.isArray(selectedToolIds) ? selectedToolIds : [];
+$: selectedFilterIds = Array.isArray(selectedFilterIds) ? selectedFilterIds : [];
 
 export let imageGenerationEnabled = false;
 let imageStyles: { id: string; name: string }[] = [];
@@ -505,62 +515,57 @@ $: (() => {
 	export let placeholder = '';
 
 	let visionCapableModels = [];
-	$: visionCapableModels = (atSelectedModel?.id ? [atSelectedModel.id] : selectedModels).filter(
+	$: visionCapableModels = activeModelIds.filter(
 		(model) => $models.find((m) => m.id === model)?.info?.meta?.capabilities?.vision ?? true
 	);
 
 	let fileUploadCapableModels = [];
-	$: fileUploadCapableModels = (atSelectedModel?.id ? [atSelectedModel.id] : selectedModels).filter(
+	$: fileUploadCapableModels = activeModelIds.filter(
 		(model) => $models.find((m) => m.id === model)?.info?.meta?.capabilities?.file_upload ?? true
 	);
 
 	let webSearchCapableModels = [];
-	$: webSearchCapableModels = (atSelectedModel?.id ? [atSelectedModel.id] : selectedModels).filter(
+	$: webSearchCapableModels = activeModelIds.filter(
 		(model) => $models.find((m) => m.id === model)?.info?.meta?.capabilities?.web_search ?? true
 	);
 
 	let imageGenerationCapableModels = [];
-	$: imageGenerationCapableModels = (
-		atSelectedModel?.id ? [atSelectedModel.id] : selectedModels
-	).filter(
+	$: imageGenerationCapableModels = activeModelIds.filter(
 		(model) =>
 			$models.find((m) => m.id === model)?.info?.meta?.capabilities?.image_generation ?? true
 	);
 
 	let codeInterpreterCapableModels = [];
-	$: codeInterpreterCapableModels = (
-		atSelectedModel?.id ? [atSelectedModel.id] : selectedModels
-	).filter(
+	$: codeInterpreterCapableModels = activeModelIds.filter(
 		(model) =>
 			$models.find((m) => m.id === model)?.info?.meta?.capabilities?.code_interpreter ?? true
 	);
 
 	let toggleFilters = [];
-	$: toggleFilters = (atSelectedModel?.id ? [atSelectedModel.id] : selectedModels)
-		.map((id) => ($models.find((model) => model.id === id) || {})?.filters ?? [])
-		.reduce((acc, filters) => acc.filter((f1) => filters.some((f2) => f2.id === f1.id)));
+	$: toggleFilters = activeModelIds.length
+		? activeModelIds
+				.map((id) => ($models.find((model) => model.id === id) || {})?.filters ?? [])
+				.reduce((acc, filters) => acc.filter((f1) => filters.some((f2) => f2.id === f1.id)))
+		: [];
 
 	let showToolsButton = false;
-	$: showToolsButton = toolServers.length + selectedToolIds.length > 0;
+	$: showToolsButton = (toolServers?.length ?? 0) + selectedToolIds.length > 0;
 
 	let showWebSearchButton = false;
 	$: showWebSearchButton =
-		(atSelectedModel?.id ? [atSelectedModel.id] : selectedModels).length ===
-			webSearchCapableModels.length &&
+		activeModelIds.length === webSearchCapableModels.length &&
 		$config?.features?.enable_web_search &&
 		($_user.role === 'admin' || $_user?.permissions?.features?.web_search);
 
 	let showImageGenerationButton = false;
 	$: showImageGenerationButton =
-		(atSelectedModel?.id ? [atSelectedModel.id] : selectedModels).length ===
-			imageGenerationCapableModels.length &&
+		activeModelIds.length === imageGenerationCapableModels.length &&
 		$config?.features?.enable_image_generation &&
 		($_user.role === 'admin' || $_user?.permissions?.features?.image_generation);
 
 	let showCodeInterpreterButton = false;
 	$: showCodeInterpreterButton =
-		(atSelectedModel?.id ? [atSelectedModel.id] : selectedModels).length ===
-			codeInterpreterCapableModels.length &&
+		activeModelIds.length === codeInterpreterCapableModels.length &&
 		$config?.features?.enable_code_interpreter &&
 		($_user.role === 'admin' || $_user?.permissions?.features?.code_interpreter);
 
@@ -615,7 +620,7 @@ $: (() => {
 			return null;
 		}
 
-		if (fileUploadCapableModels.length !== selectedModels.length) {
+		if (fileUploadCapableModels.length !== normalizedSelectedModels.length) {
 			toast.error($i18n.t('Model(s) do not support file upload'));
 			return null;
 		}
@@ -1104,7 +1109,7 @@ $: (() => {
 															alt=""
 															imageClassName=" size-14 rounded-xl object-cover"
 														/>
-														{#if atSelectedModel ? visionCapableModels.length === 0 : selectedModels.length !== visionCapableModels.length}
+														{#if atSelectedModel ? visionCapableModels.length === 0 : normalizedSelectedModels.length !== visionCapableModels.length}
 															<Tooltip
 																className=" absolute top-1 left-1"
 																content={$i18n.t('{{ models }}', {
@@ -1764,8 +1769,8 @@ $: (() => {
 											<div class="flex gap-1 items-center overflow-x-auto scrollbar-none flex-1">
 												{#if showToolsButton}
 													<Tooltip
-														content={$i18n.t('{{COUNT}} Available Tools', {
-															COUNT: toolServers.length + selectedToolIds.length
+															content={$i18n.t('{{COUNT}} Available Tools', {
+																COUNT: (toolServers?.length ?? 0) + selectedToolIds.length
 														})}
 													>
 														<button
@@ -1778,8 +1783,8 @@ $: (() => {
 														>
 															<Wrench className="size-4" strokeWidth="1.75" />
 
-															<span class="text-sm font-medium text-gray-600 dark:text-gray-300">
-																{toolServers.length + selectedToolIds.length}
+																<span class="text-sm font-medium text-gray-600 dark:text-gray-300">
+																	{(toolServers?.length ?? 0) + selectedToolIds.length}
 															</span>
 														</button>
 													</Tooltip>
@@ -1991,7 +1996,7 @@ $: (() => {
 														class=" bg-black text-white hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-100 transition rounded-full p-1.5 self-center"
 														type="button"
 														on:click={async () => {
-															if (selectedModels.length > 1) {
+															if (normalizedSelectedModels.length > 1) {
 																toast.error($i18n.t('Select only one model to call'));
 
 																return;

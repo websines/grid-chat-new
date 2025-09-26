@@ -1,7 +1,6 @@
-<script>
+<script lang="ts">
 	import { knowledge, prompts } from '$lib/stores';
 
-	import { removeLastWordFromString } from '$lib/utils';
 	import { getPrompts } from '$lib/apis/prompts';
 	import { getKnowledgeBases } from '$lib/apis/knowledge';
 
@@ -15,13 +14,13 @@
 	export let files = [];
 	export let command = '';
 
-	export let onSelect = (e) => {};
-	export let onUpload = (e) => {};
+	export let onSelect: (event: { type: string; data: any }) => void = () => {};
+	export let onUpload: (event: { type: string; data: any }) => void = () => {};
 
-	export let insertTextHandler = (text) => {};
+	export let insertTextHandler: (text: string) => void = () => {};
 
 	let loading = false;
-	let commandElement = null;
+	let commandElement: { selectUp: () => void; selectDown: () => void } | null = null;
 
 	export const selectUp = () => {
 		commandElement?.selectUp();
@@ -36,6 +35,7 @@
 	}
 
 	const init = async () => {
+		if (loading) return;
 		loading = true;
 		await Promise.all([
 			(async () => {
@@ -63,7 +63,8 @@
 					}
 				}}
 			/>
-		{:else if (command?.charAt(0) === '#' && command.startsWith('#') && !command.includes('# ')) || ('\\#' === command.slice(0, 2) && command.startsWith('#') && !command.includes('# '))}
+		{:else if (command?.charAt(0) === '#' && command.startsWith('#') && !command.includes('# ')) ||
+			('\\#' === command.slice(0, 2) && command.startsWith('#') && !command.includes('# '))}
 			<Knowledge
 				bind:this={commandElement}
 				command={command.includes('\\#') ? command.slice(2) : command}
@@ -118,9 +119,7 @@
 			class="px-2 mb-2 text-left w-full absolute bottom-0 left-0 right-0 z-10"
 		>
 			<div class="flex w-full rounded-xl border border-gray-100 dark:border-gray-850">
-				<div
-					class="max-h-60 flex flex-col w-full rounded-xl bg-white dark:bg-gray-900 dark:text-gray-100"
-				>
+				<div class="max-h-60 flex flex-col w-full rounded-xl bg-white dark:bg-gray-900 dark:text-gray-100">
 					<Spinner />
 				</div>
 			</div>
